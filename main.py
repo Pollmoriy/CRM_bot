@@ -7,6 +7,7 @@ from config import BOT_TOKEN
 from keyboards.admin_menu import admin_menu_keyboard
 from keyboards.manager_menu import manager_menu_keyboard
 from keyboards.user_menu import user_menu_keyboard
+from handlers.menu import show_menu, menu_handler
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
@@ -19,9 +20,15 @@ def main():
         },
         fallbacks=[]
     )
+    # Показываем меню после /start или по команде /menu
+    app.add_handler(CommandHandler("menu", show_menu))
+
+    # Обрабатываем нажатия на кнопки меню
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, menu_handler))
     app.add_handler(conv_handler)
     print("Бот запущен...")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
