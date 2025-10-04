@@ -1,22 +1,25 @@
 # main.py
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from database.db import db
+from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters
+from handlers.start import start, register_name, register_phone, register_email
+from states.client_states import REGISTER_NAME, REGISTER_PHONE, REGISTER_EMAIL
 from config import BOT_TOKEN
 
-# обработчик команды /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Я твой CRM-бот 😊")
-
 def main():
-    # создаём приложение
     app = Application.builder().token(BOT_TOKEN).build()
-
-    # добавляем обработчик команды
-    app.add_handler(CommandHandler("start", start))
-
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
+        states={
+            REGISTER_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_name)],
+            REGISTER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_phone)],
+            REGISTER_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_email)],
+        },
+        fallbacks=[]
+    )
+    app.add_handler(conv_handler)
     print("Бот запущен...")
-    # запускаем polling
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
