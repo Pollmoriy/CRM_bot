@@ -3,9 +3,7 @@ from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, Mess
 from database.models import User, db
 from states.client_states import REGISTER_NAME, REGISTER_PHONE, REGISTER_EMAIL
 from utils.validators import is_valid_email, is_valid_phone
-from keyboards.admin_menu import admin_menu_keyboard
-from keyboards.manager_menu import manager_menu_keyboard
-from keyboards.user_menu import user_menu_keyboard
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tg_id = update.effective_user.id

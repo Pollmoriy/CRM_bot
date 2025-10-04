@@ -4,6 +4,9 @@ from telegram.ext import Application, CommandHandler, ConversationHandler, Messa
 from handlers.start import start, register_name, register_phone, register_email
 from states.client_states import REGISTER_NAME, REGISTER_PHONE, REGISTER_EMAIL
 from config import BOT_TOKEN
+from keyboards.admin_menu import admin_menu_keyboard
+from keyboards.manager_menu import manager_menu_keyboard
+from keyboards.user_menu import user_menu_keyboard
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
