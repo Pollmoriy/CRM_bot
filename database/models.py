@@ -1,5 +1,6 @@
 from peewee import *
 from database.db import db
+from database.init_triggers import create_triggers_and_functions
 from datetime import datetime
 
 class BaseModel(Model):
@@ -92,3 +93,4 @@ def init_db():
 if __name__ == "__main__":
     init_db()
     print("Таблицы созданы успешно!")
+    create_triggers_and_functions()
