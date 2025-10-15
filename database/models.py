@@ -1,4 +1,3 @@
-# database/models.py
 from peewee import *
 from database.db import db
 from datetime import datetime
@@ -7,10 +6,9 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-
 # Пользователи
 class User(BaseModel):
-    tg_id = BigIntegerField(unique=True)
+    tg_id = BigIntegerField(unique=True, null=False)
     full_name = CharField(null=True)
     phone = CharField(null=True)
     email = CharField(null=True)
@@ -18,73 +16,68 @@ class User(BaseModel):
     is_active = BooleanField(default=True)
     created_at = DateTimeField(default=datetime.now)
 
-
 # Клиенты
 class Client(BaseModel):
-    name = CharField()
+    name = CharField(null=False)
     phone = CharField(null=True)
     email = CharField(null=True)
     company = CharField(null=True)
     note = TextField(null=True)
-    created_by = ForeignKeyField(User, backref='clients', null=True)
+    created_by = ForeignKeyField(User, backref='clients_created', null=True, on_delete='SET NULL')
+    manager = ForeignKeyField(User, backref='clients_managed', null=True, on_delete='SET NULL')
     created_at = DateTimeField(default=datetime.now)
-    manager = ForeignKeyField(User, backref='clients_managed', null=True)
-
 
 # Сделки
 class Deal(BaseModel):
-    client = ForeignKeyField(Client, backref='deals')
-    title = CharField()
+    client = ForeignKeyField(Client, backref='deals', null=False, on_delete='CASCADE')
+    title = CharField(null=False)
     amount = DecimalField(null=True, max_digits=12, decimal_places=2)
-    status = CharField(default='open')  # open, won, lost
+    status = CharField(default='open', choices=[('open','Open'),('won','Won'),('lost','Lost')])
+    assigned_to = ForeignKeyField(User, backref='deals_assigned', null=True, on_delete='SET NULL')
     created_at = DateTimeField(default=datetime.now)
-    assigned_to = ForeignKeyField(User, backref='deals_assigned', null=True)
-
 
 # Задачи
 class Task(BaseModel):
-    title = CharField()
+    title = CharField(null=False)
     description = TextField(null=True)
     due_date = DateTimeField(null=True)
-    client = ForeignKeyField(Client, backref='tasks', null=True)
-    assigned_to = ForeignKeyField(User, backref='tasks', null=True)
-    status = CharField(default='todo')  # todo, in_progress, done
+    client = ForeignKeyField(Client, backref='tasks', null=True, on_delete='SET NULL')
+    assigned_to = ForeignKeyField(User, backref='tasks_assigned', null=True, on_delete='SET NULL')
+    status = CharField(default='todo', choices=[('todo','Todo'),('in_progress','In Progress'),('done','Done')])
     reminder_sent = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now)
 
 # Напоминания
 class Reminder(BaseModel):
-    task = ForeignKeyField(Task, backref='reminders')
-    remind_at = DateTimeField()
+    task = ForeignKeyField(Task, backref='reminders', null=False, on_delete='CASCADE')
+    remind_at = DateTimeField(null=False)
     sent = BooleanField(default=False)
 
 # Логи действий
 class ActivityLog(BaseModel):
-    user = ForeignKeyField(User, null=True)
-    action = TextField()
+    user = ForeignKeyField(User, null=True, backref='activities', on_delete='SET NULL')
+    action = TextField(null=False)
     created_at = DateTimeField(default=datetime.now)
-    assigned_to = ForeignKeyField(User, backref='deals_assigned', null=True)
-
 
 # Вложения
 class Attachment(BaseModel):
-    client = ForeignKeyField(Client, backref='attachments', null=True)
-    deal = ForeignKeyField(Deal, backref='attachments', null=True)
-    file_path = CharField()
+    client = ForeignKeyField(Client, backref='attachments', null=True, on_delete='SET NULL')
+    deal = ForeignKeyField(Deal, backref='attachments', null=True, on_delete='SET NULL')
+    file_path = CharField(null=False)
     description = TextField(null=True)
     uploaded_at = DateTimeField(default=datetime.now)
 
 # Настройки
 class Setting(BaseModel):
-    user = ForeignKeyField(User, backref='settings', null=True)
-    key = CharField()
-    value = CharField()
+    user = ForeignKeyField(User, backref='settings', null=False, on_delete='CASCADE')
+    key = CharField(null=False)
+    value = CharField(null=False)
     updated_at = DateTimeField(default=datetime.now)
 
 # История сообщений
 class MessageHistory(BaseModel):
-    user = ForeignKeyField(User, backref='messages', null=True)
-    message = TextField()
+    user = ForeignKeyField(User, backref='messages', null=False, on_delete='CASCADE')
+    message = TextField(null=False)
     created_at = DateTimeField(default=datetime.now)
 
 # Инициализация таблиц

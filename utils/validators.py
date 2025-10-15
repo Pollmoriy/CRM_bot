@@ -19,7 +19,6 @@ def is_valid_phone(phone: str) -> bool:
     if not bool(re.match(pattern, phone)):
         return False
 
-        # Проверка на уникальность телефона
     db.connect(reuse_if_open=True)
     exists = User.select().where(User.phone == phone).exists()
     db.close()
