@@ -18,60 +18,6 @@ def create_triggers_and_functions():
     """)
 
     # -------------------------
-    # Валидация email при вставке и обновлении
-    # -------------------------
-    db.execute_sql("DROP TRIGGER IF EXISTS validate_email_insert;")
-    db.execute_sql("""
-    CREATE TRIGGER validate_email_insert
-    BEFORE INSERT ON User
-    FOR EACH ROW
-    BEGIN
-        IF NEW.email IS NOT NULL AND NEW.email NOT REGEXP '^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$' THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Неверный формат email';
-        END IF;
-    END;
-    """)
-
-    db.execute_sql("DROP TRIGGER IF EXISTS validate_email_update;")
-    db.execute_sql("""
-    CREATE TRIGGER validate_email_update
-    BEFORE UPDATE ON User
-    FOR EACH ROW
-    BEGIN
-        IF NEW.email IS NOT NULL AND NEW.email NOT REGEXP '^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$' THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Неверный формат email';
-        END IF;
-    END;
-    """)
-
-    # -------------------------
-    # Валидация телефона при вставке и обновлении
-    # -------------------------
-    db.execute_sql("DROP TRIGGER IF EXISTS validate_phone_insert;")
-    db.execute_sql("""
-    CREATE TRIGGER validate_phone_insert
-    BEFORE INSERT ON User
-    FOR EACH ROW
-    BEGIN
-        IF NEW.phone IS NOT NULL AND NEW.phone NOT REGEXP '^\\+?\\d{10,15}$' THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Неверный формат телефона';
-        END IF;
-    END;
-    """)
-
-    db.execute_sql("DROP TRIGGER IF EXISTS validate_phone_update;")
-    db.execute_sql("""
-    CREATE TRIGGER validate_phone_update
-    BEFORE UPDATE ON User
-    FOR EACH ROW
-    BEGIN
-        IF NEW.phone IS NOT NULL AND NEW.phone NOT REGEXP '^\\+?\\d{10,15}$' THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Неверный формат телефона';
-        END IF;
-    END;
-    """)
-
-    # -------------------------
     # Автоматическое логирование действий при изменении заказов
     # -------------------------
     db.execute_sql("DROP TRIGGER IF EXISTS log_deal_update;")
@@ -79,10 +25,8 @@ def create_triggers_and_functions():
     CREATE TRIGGER log_deal_update
     AFTER UPDATE ON Deal
     FOR EACH ROW
-    BEGIN
-        INSERT INTO ActivityLog(user_id, action, created_at, assigned_to_id)
-        VALUES (NEW.assigned_to_id, CONCAT('Обновлен заказ ID: ', NEW.id), NOW(), NEW.assigned_to_id);
-    END;
+    INSERT INTO ActivityLog(user_id, action, created_at, assigned_to_id)
+    VALUES (NEW.assigned_to_id, CONCAT('Обновлен заказ ID: ', NEW.id), NOW(), NEW.assigned_to_id)
     """)
 
     # -------------------------
