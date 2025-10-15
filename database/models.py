@@ -59,6 +59,7 @@ class ActivityLog(BaseModel):
     user = ForeignKeyField(User, null=True, backref='activities', on_delete='SET NULL')
     action = TextField(null=False)
     created_at = DateTimeField(default=datetime.now)
+    assigned_to = ForeignKeyField(User, null=True, backref='assigned_activities', on_delete='SET NULL')
 
 # Вложения
 class Attachment(BaseModel):
