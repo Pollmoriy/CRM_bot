@@ -1,16 +1,19 @@
-# database/models.py
-from peewee import *
-from .db import db
+from sqlalchemy import Column, Integer, String, Enum
+from database.db import Base
+import enum
 
-class BaseModel(Model):
-    class Meta:
-        database = db
+class UserRole(enum.Enum):
+    admin = "Admin"
+    manager = "Manager"
+    user = "User"
 
 
-class User(BaseModel):
-    id_user = AutoField(primary_key=True)
-    full_name = CharField(max_length=100)
-    phone = CharField(max_length=20, null=True)
-    telegram_id = CharField(max_length=50, unique=True)
-    role = CharField(max_length=20, default='employee')
-    created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    full_name = Column(String(100))
+    phone = Column(String(20))
+    telegram_id = Column(String(50))
+    role = Column(Enum(UserRole))
+    hashed_password = Column(String(255))

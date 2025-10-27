@@ -1,12 +1,19 @@
-# database/db.py
-from peewee import MySQLDatabase
-from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 
-db = MySQLDatabase(
-    DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT,
-    charset='utf8mb4'
+# Подключение к существующей БД
+DATABASE_URL = f"mysql+asyncmy://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# Асинхронный движок
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+# Фабрика сессий
+async_session = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False
 )
+
+# Базовый класс моделей
+Base = declarative_base()
