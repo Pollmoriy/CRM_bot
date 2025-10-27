@@ -1,17 +1,13 @@
-# main.py
-from loader import app, init_db
-from telegram.ext import CommandHandler
+import asyncio
+from loader import bot, dp, init_db
+from aiogram import executor
+import handlers.start
 
-# Тестовая команда
-async def start(update, context):
-    await update.message.reply_text("Бот запущен. База данных подключена ✅")
+async def on_startup(dp):  # <- обязательно принимать аргумент dp
+    await init_db()
+    print("Бот запущен и база данных готова!")
 
-def main():
-    init_db()
-    app.add_handler(CommandHandler("start", start))
-    print("🚀 Бот запущен")
-    app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
 

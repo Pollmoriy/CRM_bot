@@ -1,13 +1,19 @@
-# loader.py
-from telegram.ext import Application
+import asyncio
+from aiogram import Bot, Dispatcher
+from database.db import engine, async_session, Base
+from database.models import User
 from config import BOT_TOKEN
-from database.models import db, User
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-# --- Подключение к БД и создание таблиц (если не созданы) ---
-def init_db():
-    db.connect(reuse_if_open=True)
-    db.create_tables([User])
-    print("✅ Таблицы инициализированы")
 
-# --- Инициализация бота ---
-app = Application.builder().token(BOT_TOKEN).build()
+# Создание экземпляров бота и диспетчера
+bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
+
+# Инициализация базы данных
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("База данных и таблицы готовы!")
+
