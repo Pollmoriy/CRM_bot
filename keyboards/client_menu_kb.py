@@ -1,14 +1,16 @@
+# keyboards/client_menu_kb.py
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 def client_menu_kb(for_role: str):
-    """
-    Меню клиентов:
-    - Просмотр списка с кнопками для каждого клиента
-    - Добавление нового клиента
-    """
-    kb = InlineKeyboardMarkup(row_width=1)
+    kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
-        InlineKeyboardButton("📋 Список клиентов", callback_data="view_clients"),
-        InlineKeyboardButton("➕ Добавить клиента", callback_data="client_add")
+        InlineKeyboardButton("📋 Просмотр списка", callback_data="client_view")
     )
+    kb.add(
+        InlineKeyboardButton("➕ Добавить клиента", callback_data="client_add"),
+        InlineKeyboardButton("✏️ Изменить клиента", callback_data="client_edit")
+    )
+    # удаление — admin/manager
+    if for_role in ("admin", "manager"):
+        kb.add(InlineKeyboardButton("❌ Удалить клиента", callback_data="client_delete"))
     return kb

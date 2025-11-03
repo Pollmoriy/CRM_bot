@@ -1,8 +1,9 @@
 import asyncio
 from loader import bot, dp, init_db
 from aiogram import executor
-import handlers.clients.menu
 import handlers.start
+import handlers.clients.menu
+import handlers.clients.view_clients
 
 async def on_startup(dp):  # <- обязательно принимать аргумент dp
     await init_db()
