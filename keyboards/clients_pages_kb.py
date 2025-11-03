@@ -27,12 +27,35 @@ def clients_nav_kb(current_page: int, has_next: bool, search_name: str, filter_b
     )
     return kb
 
-# Клавиатура выбора фильтра
+# Выбор типа фильтра
 def filter_options_kb():
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
-        InlineKeyboardButton("По дате добавления", callback_data="filter|date"),
-        InlineKeyboardButton("По сегментации", callback_data="filter|segment"),
-        InlineKeyboardButton("Сбросить фильтр", callback_data="filter|none")
+        InlineKeyboardButton("По сегментации", callback_data="filter_select|segment"),
+        InlineKeyboardButton("По дате добавления", callback_data="filter_select|date"),
+    )
+    kb.add(
+        InlineKeyboardButton("Сбросить фильтр", callback_data="filter_apply|none|none")
+    )
+    return kb
+
+# Выбор конкретного значения фильтра
+def filter_values_kb(filter_type: str):
+    kb = InlineKeyboardMarkup(row_width=2)
+    if filter_type == "segment":
+        # Примеры сегментов — можно добавить свои
+        kb.add(
+            InlineKeyboardButton("VIP", callback_data="filter_apply|segment|VIP"),
+            InlineKeyboardButton("Regular", callback_data="filter_apply|segment|Regular"),
+            InlineKeyboardButton("New", callback_data="filter_apply|segment|New"),
+        )
+    elif filter_type == "date":
+        kb.add(
+            InlineKeyboardButton("Сегодня", callback_data="filter_apply|date|today"),
+            InlineKeyboardButton("Последняя неделя", callback_data="filter_apply|date|week"),
+            InlineKeyboardButton("Последний месяц", callback_data="filter_apply|date|month"),
+        )
+    kb.add(
+        InlineKeyboardButton("Отмена", callback_data="filter_apply|none|none")
     )
     return kb
