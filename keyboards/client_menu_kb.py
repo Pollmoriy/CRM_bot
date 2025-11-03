@@ -12,7 +12,7 @@ def client_menu_kb(for_role: str):
         InlineKeyboardButton("✏️ Изменить клиента", callback_data="client_edit")
     )
     # просмотр списка — всем
-    kb.add(InlineKeyboardButton("📋 Просмотр списка", callback_data="client_view"))
+    kb.add(InlineKeyboardButton("📋 Просмотр списка", callback_data="view_clients"))
 
     # удаление — только admin/manager
     if for_role in ("admin", "manager"):

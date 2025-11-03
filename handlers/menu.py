@@ -11,3 +11,5 @@ async def show_main_menu(message: types.Message, role: str):
         await message.answer("Вы вошли как Менеджер", reply_markup=manager_menu)
     else:
         await message.answer("Вы вошли как Сотрудник", reply_markup=employee_menu)
+
+

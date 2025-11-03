@@ -6,7 +6,7 @@ from config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 DATABASE_URL = f"mysql+asyncmy://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Асинхронный движок
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL, echo=False)
 
 # Фабрика сессий
 async_session = sessionmaker(
