@@ -9,9 +9,7 @@ class SearchClientStates(StatesGroup):
     waiting_for_name = State()
 
 async def start_search_client(callback: types.CallbackQuery):
-    # Быстрый ack
-    await callback.answer(cache_time=1)
-    # Запускаем FSM: попросим имя
+    await callback.answer()
     await callback.message.answer("Введите имя или часть имени для поиска:")
     await SearchClientStates.waiting_for_name.set()
 
@@ -22,8 +20,5 @@ async def process_search_name(message: types.Message, state: FSMContext):
         await message.answer("Пустой запрос. Введите имя или часть имени:")
         return
 
-    # Сохраним в state (если надо) или сразу покажем результаты (страница 1)
-    await state.update_data(search_name=search_text)
-    # Показываем страницу 1 с этим поиском
     await show_clients_page(message, page=1, search_name=search_text, filter_by="")
     await state.finish()
