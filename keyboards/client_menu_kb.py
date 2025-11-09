@@ -1,6 +1,7 @@
 # keyboards/client_menu_kb.py
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 def client_menu_kb(for_role: str):
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(

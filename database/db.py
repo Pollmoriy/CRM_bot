@@ -15,5 +15,6 @@ async_session = sessionmaker(
     expire_on_commit=False
 )
 
+
 # Базовый класс моделей
 Base = declarative_base()
