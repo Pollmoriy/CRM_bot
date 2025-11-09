@@ -40,7 +40,7 @@ async def show_delete_clients_page(callback: types.CallbackQuery, page: int = 1)
         kb.row(*nav_buttons)
 
     # Главное меню клиентов
-    kb.add(InlineKeyboardButton("🏠 Главное меню", callback_data="clients_menu"))
+    kb.add(InlineKeyboardButton("🏠 Главное меню", callback_data="main_back"))
 
     # Редактируем сообщение, если оно уже существует
     if callback.message:
