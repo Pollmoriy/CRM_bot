@@ -1,6 +1,7 @@
 # database/models.py (фрагмент)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Text, Date, TIMESTAMP, Enum, func
+from sqlalchemy import Column, Integer, String, Text, Date, TIMESTAMP, Enum, ForeignKey, Boolean, func
+from sqlalchemy.orm import relationship
 import enum
 
 Base = declarative_base()
@@ -35,3 +36,72 @@ class Client(Base):
     added_date = Column(TIMESTAMP, server_default=func.now())
     segment = Column(Enum('new', 'regular', 'vip'), default='new')
     notes = Column(Text)
+
+# 1️⃣ Этапы сделки (для удобства при отображении)
+class DealStage(enum.Enum):
+    new = "Новая"
+    in_progress = "В работе"
+    completed = "Закрыта"
+    on_hold = "Приостановлена"
+
+
+class Deal(Base):
+    __tablename__ = "deals"
+
+    id_deal = Column(Integer, primary_key=True, autoincrement=True)
+    deal_name = Column(String(150), nullable=False)
+
+    id_client = Column(Integer, ForeignKey("clients.id_client", ondelete="SET NULL"))
+    id_manager = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"))
+
+    progress = Column(Integer, default=0)  # процент выполнения
+    is_completed = Column(Boolean, default=False)
+
+    date_created = Column(TIMESTAMP, server_default=func.current_timestamp())
+    date_completed = Column(Date)
+
+    # связи
+    client = relationship("Client", backref="deals")
+    manager = relationship("User", backref="deals", foreign_keys=[id_manager])
+    tasks = relationship("Task", back_populates="deal", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Deal(id={self.id_deal}, name={self.deal_name}, progress={self.progress}%)>"
+
+
+# 2️⃣ Статусы и приоритеты задач
+class TaskStatus(enum.Enum):
+    new = "new"
+    in_progress = "in_progress"
+    done = "done"
+    overdue = "overdue"
+
+
+class TaskPriority(enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id_task = Column(Integer, primary_key=True, autoincrement=True)
+    task_name = Column(String(150), nullable=False)
+    description = Column(Text)
+
+    id_employee = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"))
+    id_deal = Column(Integer, ForeignKey("deals.id_deal", ondelete="SET NULL"))
+
+    status = Column(Enum(TaskStatus), default=TaskStatus.new)
+    priority = Column(Enum(TaskPriority), default=TaskPriority.medium)
+
+    deadline = Column(Date)
+    date_completed = Column(Date)
+
+    # связи
+    employee = relationship("User", backref="tasks", foreign_keys=[id_employee])
+    deal = relationship("Deal", back_populates="tasks")
+
+    def __repr__(self):
+        return f"<Task(id={self.id_task}, name={self.task_name}, status={self.status.value})>"
