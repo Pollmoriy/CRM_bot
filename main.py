@@ -4,6 +4,8 @@ from aiogram import executor
 import handlers.start
 import handlers.clients.menu
 import handlers.clients.view_clients
+import handlers.deals.menu
+
 
 async def on_startup(dp):  # <- обязательно принимать аргумент dp
     await init_db()
