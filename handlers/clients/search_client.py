@@ -1,17 +1,20 @@
 # handlers/clients/search_client.py
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.dispatcher.filters.state import StatesGroup, State
 from loader import dp
+from loader import safe_answer
 from handlers.clients.view_clients import show_clients_page
 
 class SearchClientStates(StatesGroup):
     waiting_for_name = State()
 
+
 async def start_search_client(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     await callback.message.answer("Введите имя или часть имени для поиска:")
     await SearchClientStates.waiting_for_name.set()
+
 
 @dp.message_handler(state=SearchClientStates.waiting_for_name)
 async def process_search_name(message: types.Message, state: FSMContext):

@@ -1,14 +1,15 @@
 # handlers/clients/filter_clients.py
 from aiogram import types, Dispatcher
+from loader import safe_answer
 from handlers.clients.view_clients import show_clients_page
 
-def filter_values_kb(filter_type: str):
+def filter_values_kb(filter_type: str) -> types.InlineKeyboardMarkup:
     kb = types.InlineKeyboardMarkup(row_width=2)
     if filter_type == "segment":
         kb.add(
-            types.InlineKeyboardButton("VIP", callback_data="filter_apply|segment|VIP"),
-            types.InlineKeyboardButton("Regular", callback_data="filter_apply|segment|Regular"),
-            types.InlineKeyboardButton("New", callback_data="filter_apply|segment|New"),
+            types.InlineKeyboardButton("VIP", callback_data="filter_apply|segment|vip"),
+            types.InlineKeyboardButton("Regular", callback_data="filter_apply|segment|regular"),
+            types.InlineKeyboardButton("New", callback_data="filter_apply|segment|new"),
         )
     elif filter_type == "date":
         kb.add(
@@ -21,7 +22,7 @@ def filter_values_kb(filter_type: str):
 
 
 async def start_filter_client(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     kb = types.InlineKeyboardMarkup(row_width=2)
     kb.add(
         types.InlineKeyboardButton("🗓 По дате добавления", callback_data="filter_select|date"),
@@ -32,14 +33,14 @@ async def start_filter_client(callback: types.CallbackQuery):
 
 
 async def select_filter_type(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     _, filter_type = callback.data.split("|", 1)
     kb = filter_values_kb(filter_type)
     await callback.message.edit_reply_markup(reply_markup=kb)
 
 
 async def apply_filter_value(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     _, filter_type, filter_value = callback.data.split("|", 2)
     filter_by = "" if filter_type == "none" else f"{filter_type}|{filter_value}"
     await show_clients_page(callback.message, page=1, search_name="", filter_by=filter_by)

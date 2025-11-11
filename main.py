@@ -1,17 +1,31 @@
+# main.py
 import asyncio
-from loader import bot, dp, init_db
 from aiogram import executor
+from loader import bot, dp, init_db
 import handlers.start
 import handlers.clients.menu
 import handlers.clients.view_clients
 import handlers.deals.menu
 
 
-async def on_startup(dp):  # <- обязательно принимать аргумент dp
+async def on_startup(dp):
     await init_db()
-    print("Бот запущен и база данных готова!")
+    print("🤖 Бот успешно запущен!")
+
+
+async def on_shutdown(dp):
+    print("🛑 Завершение работы... Закрытие соединений с БД.")
+    await bot.session.close()
 
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
-
+    try:
+        print("🚀 Запуск бота...")
+        executor.start_polling(
+            dp,
+            skip_updates=True,
+            on_startup=on_startup,
+            on_shutdown=on_shutdown
+        )
+    except (KeyboardInterrupt, SystemExit):
+        print("❌ Бот остановлен вручную.")

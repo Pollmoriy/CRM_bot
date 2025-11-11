@@ -1,13 +1,11 @@
+# handlers/clients/add_client.py
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from loader import dp, async_session
-from database.models import Client, User
+from aiogram.dispatcher.filters.state import StatesGroup, State
+from loader import dp,  safe_answer
+from database.db import async_session
 from sqlalchemy import text
-import re
-from datetime import datetime
 
-# FSM для добавления клиента
 class AddClientStates(StatesGroup):
     full_name = State()
     phone = State()
@@ -16,8 +14,9 @@ class AddClientStates(StatesGroup):
     segment = State()
     notes = State()
 
-# Вспомогательная функция для валидации даты
+
 def validate_date(date_text):
+    from datetime import datetime
     try:
         if not date_text or date_text.strip() == "-":
             return None
@@ -25,18 +24,16 @@ def validate_date(date_text):
     except ValueError:
         return False
 
-# Вспомогательная функция для валидации сегмента
 def validate_segment(segment_text):
     return segment_text in ("new", "regular", "vip")
 
-# Старт добавления клиента
+
 async def start_add_client(callback: types.CallbackQuery):
-    await callback.answer()  # ⚡ мгновенный ответ Telegram
+    await safe_answer(callback)
     await callback.message.answer("Введите полное имя клиента:")
     await AddClientStates.full_name.set()
 
 
-# Хэндлеры для каждого шага
 @dp.message_handler(state=AddClientStates.full_name)
 async def add_client_full_name(message: types.Message, state: FSMContext):
     name = message.text.strip()
@@ -50,24 +47,21 @@ async def add_client_full_name(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=AddClientStates.phone)
 async def add_client_phone(message: types.Message, state: FSMContext):
-    phone = message.text.strip()
-    await state.update_data(phone=phone)
+    await state.update_data(phone=message.text.strip())
     await message.answer("Введите Telegram клиента (можно оставить пустым, введите '-' если нет):")
     await AddClientStates.next()
 
 
 @dp.message_handler(state=AddClientStates.telegram)
 async def add_client_telegram(message: types.Message, state: FSMContext):
-    tg = message.text.strip()
-    await state.update_data(telegram=tg)
-    await message.answer("Введите дату рождения клиента в формате ГГГГ-ММ-ДД (можно оставить пустым, введите '-' если нет):")
+    await state.update_data(telegram=message.text.strip())
+    await message.answer("Введите дату рождения клиента в формате ГГГГ-ММ-ДД (или '-' если нет):")
     await AddClientStates.next()
 
 
 @dp.message_handler(state=AddClientStates.birth_date)
 async def add_client_birth_date(message: types.Message, state: FSMContext):
-    date_text = message.text.strip()
-    birth_date = validate_date(date_text)
+    birth_date = validate_date(message.text.strip())
     if birth_date is False:
         await message.answer("Некорректный формат даты. Введите в формате ГГГГ-ММ-ДД или '-' если нет:")
         return
@@ -83,38 +77,31 @@ async def add_client_segment(message: types.Message, state: FSMContext):
         await message.answer("Сегмент должен быть одним из: new, regular, vip. Введите снова:")
         return
     await state.update_data(segment=segment)
-    await message.answer("Введите заметки о клиенте (можно оставить пустым, введите '-' если нет):")
+    await message.answer("Введите заметки о клиенте (или '-' если нет):")
     await AddClientStates.next()
 
 
 @dp.message_handler(state=AddClientStates.notes)
 async def add_client_notes(message: types.Message, state: FSMContext):
-    notes = message.text.strip()
-    await state.update_data(notes=notes)
-
     data = await state.get_data()
     full_name = data["full_name"]
     phone = data["phone"] if data["phone"] != "-" else None
     telegram = data["telegram"] if data["telegram"] != "-" else None
     birth_date = data["birth_date"]
     segment = data["segment"]
-    notes = data["notes"] if data["notes"] != "-" else None
+    notes = message.text.strip()
+    notes = notes if notes != "-" else None
 
     await message.answer("Создаю нового клиента...")
-
-    # ⚡ мгновенный ответ Telegram перед долгой операцией
     await message.bot.send_chat_action(message.chat.id, action="typing")
 
-    # Добавление клиента через процедуру в БД
     try:
         async with async_session() as session:
-            # Для примера используем user_id = 1, позже можно получать из telegram_id
-            current_user_id = 1
-            proc = text(
+            stmt = text(
                 "CALL add_client_proc(:full_name, :phone, :telegram, :birth_date, :segment, :notes, :user_id)"
             )
             await session.execute(
-                proc,
+                stmt,
                 {
                     "full_name": full_name,
                     "phone": phone,
@@ -122,7 +109,7 @@ async def add_client_notes(message: types.Message, state: FSMContext):
                     "birth_date": birth_date,
                     "segment": segment,
                     "notes": notes,
-                    "user_id": current_user_id,
+                    "user_id": 1,  # пока пример
                 },
             )
             await session.commit()

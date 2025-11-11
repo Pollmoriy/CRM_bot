@@ -1,13 +1,13 @@
 # handlers/clients/view_clients.py
 from aiogram import types
-from sqlalchemy import text
+from loader import dp, safe_answer
 from database.db import async_session
-from loader import dp
-from keyboards.clients_pages_kb import top_clients_kb, clients_nav_kb, filter_values_kb
+from sqlalchemy import text
 from datetime import datetime, timedelta
 
-PAGE_SIZE = 5
+PAGE_SIZE = 5  # Количество клиентов на одной странице
 
+# Форматирование карточки клиента
 def format_client_card_row(row) -> str:
     full_name = getattr(row, "full_name", row[1])
     phone = getattr(row, "phone", "-") or "-"
@@ -26,7 +26,7 @@ def format_client_card_row(row) -> str:
         f"─────────────────────────────\n"
     )
 
-
+# Получение клиентов из базы с учетом поиска, фильтра и пагинации
 async def _call_get_clients(session, search_name: str, filter_by: str, page: int, page_size: int):
     filter_type, filter_value = "", ""
     if filter_by and "|" in filter_by:
@@ -37,11 +37,11 @@ async def _call_get_clients(session, search_name: str, filter_by: str, page: int
     if filter_type == "segment":
         stmt = text("""
             SELECT * FROM clients
-            WHERE full_name LIKE :search AND segment = :value
+            WHERE full_name LIKE :search AND LOWER(segment) = :value
             ORDER BY added_date DESC
             LIMIT :limit OFFSET :offset
         """)
-        params = {"search": f"%{search_name}%", "value": filter_value, "limit": page_size, "offset": offset_val}
+        params = {"search": f"%{search_name}%", "value": filter_value.lower(), "limit": page_size, "offset": offset_val}
 
     elif filter_type == "date":
         now = datetime.now()
@@ -74,9 +74,8 @@ async def _call_get_clients(session, search_name: str, filter_by: str, page: int
     result = await session.execute(stmt, params)
     return result.fetchall()
 
-
+# Показ клиентов с клавиатурой
 async def show_clients_page(target_message: types.Message, page: int = 1, search_name: str = "", filter_by: str = ""):
-    """Обновляет список клиентов с клавиатурой"""
     async with async_session() as session:
         rows = await _call_get_clients(session, search_name, filter_by, page, PAGE_SIZE)
 
@@ -90,8 +89,13 @@ async def show_clients_page(target_message: types.Message, page: int = 1, search
         for r in rows:
             text_out += format_client_card_row(r)
 
-    top_kb = top_clients_kb()
-    nav_kb = clients_nav_kb(page, has_next, search_name, filter_by)
+    # Клавиатуры
+    from keyboards.clients_pages_kb import top_clients_kb, clients_nav_kb
+
+    top_kb = top_clients_kb()  # Верхние кнопки (поиск, фильтр)
+    nav_kb = clients_nav_kb(page, has_next, search_name, filter_by)  # Пагинация
+
+    # Объединяем клавиатуры
     for row in nav_kb.inline_keyboard:
         top_kb.row(*row)
 
@@ -100,10 +104,10 @@ async def show_clients_page(target_message: types.Message, page: int = 1, search
     except:
         await target_message.answer(text_out, parse_mode="HTML", reply_markup=top_kb)
 
-
+# Обработка кнопок пагинации
 @dp.callback_query_handler(lambda c: c.data.startswith("clients_page|"))
 async def clients_pagination_callback(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     try:
         _, page, search_name, filter_by = callback.data.split("|", 3)
         await show_clients_page(callback.message, page=int(page), search_name=search_name, filter_by=filter_by)

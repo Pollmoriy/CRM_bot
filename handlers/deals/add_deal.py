@@ -2,7 +2,8 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from loader import dp, async_session
+from loader import dp
+from database.db import async_session
 from database.models import Deal, User, Client
 from sqlalchemy import select
 
