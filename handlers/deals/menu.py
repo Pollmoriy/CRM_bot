@@ -5,6 +5,8 @@ from database.db import async_session
 from database.models import User
 from sqlalchemy import select
 from keyboards.deal_menu_kb import deal_menu_kb
+from handlers.deals.add_deal import start_add_deal
+
 
 
 @dp.message_handler(lambda m: m.text in ["💼 Сделки", "Мои сделки"])
@@ -40,3 +42,19 @@ async def back_to_main(callback: types.CallbackQuery):
 
     await callback.message.edit_text("🏠 Главное меню:", reply_markup=kb)
     await callback.answer()
+
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith("deal_"))
+async def deal_main_callback(callback: types.CallbackQuery):
+    data = callback.data
+
+    if data == "deal_view":
+        # показать список сделок
+        ...
+    elif data == "deal_edit":
+        # редактирование
+        ...
+    # вот сюда добавляем
+    elif data == "deal_add":
+        await start_add_deal(callback)
+
+
