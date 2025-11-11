@@ -16,5 +16,4 @@ def deal_menu_kb(role: str):
     else:  # сотрудник
         kb.add(InlineKeyboardButton("📋 Мои сделки", callback_data="deal_view"))
 
-    kb.add(InlineKeyboardButton("↩️ Назад", callback_data="back_to_main"))
     return kb
