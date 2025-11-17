@@ -82,8 +82,10 @@ async def show_deal_detail(callback: types.CallbackQuery):
         deal = await session.get(Deal, deal_id, options=[selectinload(Deal.tasks)])
         client = await session.get(Client, deal.id_client)
         manager = await session.get(User, deal.id_manager)
-        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-        user = result.scalar_one_or_none()
+
+        user = (
+            await session.execute(select(User).where(User.telegram_id == telegram_id))
+        ).scalar_one_or_none()
         role = user.role.value if user and user.role else "employee"
 
     num_tasks = len(deal.tasks)
@@ -95,7 +97,7 @@ async def show_deal_detail(callback: types.CallbackQuery):
         f"<b>Клиент:</b> {client.full_name if client else '—'}\n"
         f"<b>Менеджер:</b> {manager.full_name if manager else '—'}\n"
         f"<b>Дата создания:</b> {deal.date_created.strftime('%Y-%m-%d %H:%M') if deal.date_created else '—'}\n"
-        f"<b>Этап:</b> {deal.progress}%\n"
+        f"<b>Этап:</b> {deal.stage.value}\n"
         f"<b>Количество задач:</b> {num_tasks}\n"
         f"<b>Прогресс:</b> {progress_percent}%"
     )

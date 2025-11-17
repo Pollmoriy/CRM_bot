@@ -54,19 +54,22 @@ class Deal(Base):
     id_client = Column(Integer, ForeignKey("clients.id_client", ondelete="SET NULL"))
     id_manager = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"))
 
-    progress = Column(Integer, default=0)  # процент выполнения
+    progress = Column(Integer, default=0)
     is_completed = Column(Boolean, default=False)
+
+    stage = Column(
+        Enum(DealStage, values_callable=lambda obj: [e.value for e in obj]),
+        default=DealStage.new.value,
+        nullable=False
+    )
 
     date_created = Column(TIMESTAMP, server_default=func.current_timestamp())
     date_completed = Column(Date)
 
-    # связи
     client = relationship("Client", backref="deals")
     manager = relationship("User", backref="deals", foreign_keys=[id_manager])
     tasks = relationship("Task", back_populates="deal", cascade="all, delete-orphan")
 
-    def __repr__(self):
-        return f"<Deal(id={self.id_deal}, name={self.deal_name}, progress={self.progress}%)>"
 
 
 # 2️⃣ Статусы и приоритеты задач
