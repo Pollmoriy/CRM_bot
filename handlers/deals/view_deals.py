@@ -123,49 +123,74 @@ async def show_deals(message_or_callback, page: int, search_name: str, filter_by
 @dp.callback_query_handler(lambda c: c.data.startswith("deal_detail_"))
 async def show_deal_detail(callback: types.CallbackQuery):
     await safe_answer(callback)
+
     deal_id = int(callback.data.split("_")[-1])
     telegram_id = str(callback.from_user.id)
 
     async with async_session_maker() as session:
-        deal = await session.get(Deal, deal_id, options=[selectinload(Deal.tasks)])
+        # Загружаем сделку с клиентом, менеджером и задачами
+        deal = await session.get(
+            Deal,
+            deal_id,
+            options=[
+                selectinload(Deal.client),
+                selectinload(Deal.manager),
+                selectinload(Deal.tasks)
+            ]
+        )
+
+        # Загружаем пользователя
         user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
         user = user_q.scalar_one_or_none()
 
-        manager = deal.manager if deal else None
-        client = deal.client if deal else None
-
     if not deal:
-        await callback.message.edit_text("Сделка не найдена.")
+        await callback.message.edit_text("⚠️ Сделка не найдена.")
         return
 
+    # Прогресс выполнения задач
     num_tasks = len(deal.tasks)
     completed_tasks = len([t for t in deal.tasks if getattr(t.status, "name", None) == "done"])
     progress_percent = int(completed_tasks / num_tasks * 100) if num_tasks else 0
 
     stage_display = deal.stage
 
+    # Формируем текст карточки
     text = (
         f"<b>Сделка:</b> {deal.deal_name}\n"
-        f"<b>Клиент:</b> {client.full_name if client else '—'}\n"
-        f"<b>Менеджер:</b> {manager.full_name if manager else '—'}\n"
+        f"<b>Клиент:</b> {deal.client.full_name if deal.client else '—'}\n"
+        f"<b>Менеджер:</b> {deal.manager.full_name if deal.manager else '—'}\n"
         f"<b>Дата создания:</b> {deal.date_created.strftime('%Y-%m-%d %H:%M') if deal.date_created else '—'}\n"
         f"<b>Этап:</b> {stage_display}\n"
         f"<b>Количество задач:</b> {num_tasks}\n"
         f"<b>Прогресс:</b> {progress_percent}%"
     )
 
+    # Формируем клавиатуру
     kb = InlineKeyboardMarkup(row_width=2)
+
+    # Кнопки для всех пользователей
     kb.add(
         InlineKeyboardButton("Прогресс", callback_data=f"deal_progress_{deal.id_deal}"),
-        InlineKeyboardButton("Назад", callback_data="deal_view")
+        InlineKeyboardButton("Задачи", callback_data=f"deal_tasks_{deal.id_deal}")
     )
-    if user.role.value in ["admin", "manager"]:
+
+    # Кнопки только для admin и manager
+    if user and user.role and user.role.value in ["admin", "manager"]:
         kb.add(
-            InlineKeyboardButton("Изменить статус", callback_data=f"deal_edit_status_{deal.id_deal}"),
-            InlineKeyboardButton("История", callback_data=f"deal_history_{deal.id_deal}")
+            InlineKeyboardButton("История", callback_data=f"deal_history_{deal.id_deal}"),
+            InlineKeyboardButton("Изменить статус", callback_data=f"deal_edit_status_{deal.id_deal}")
         )
 
-    await callback.message.edit_text(text, reply_markup=kb)
+    # Кнопка назад
+    kb.add(
+        InlineKeyboardButton("Назад", callback_data="deal_view")
+    )
+
+    # Отправляем или редактируем сообщение
+    try:
+        await callback.message.edit_text(text, reply_markup=kb)
+    except:
+        await callback.message.answer(text, reply_markup=kb)
 
 # ------------------------------
 # Пагинация
