@@ -1,15 +1,26 @@
 from aiogram import types
-from loader import dp
+from loader import dp, safe_answer
+from sqlalchemy import select
 from database.db import async_session
 from database.models import User
-from sqlalchemy import select
 from keyboards.deal_menu_kb import deal_menu_kb
+from handlers.deals.view_deals import show_deals
+from handlers.deals.filter_deals import start_filter_deal, register_filter_deals
 from handlers.deals.add_deal import start_add_deal
 from handlers.deals.edit_deal import show_edit_deals_page
 from handlers.deals.delete_deal import show_delete_deals_page
-from handlers.deals.view_deals import show_deals
+from handlers.deals.search_deals import start_search_deal
 
+# ------------------------------
+# Главное меню сделок в зависимости от роли
+# ------------------------------
+async def get_main_menu_kb(user: User):
+    role = user.role.value if user and user.role else "employee"
+    return deal_menu_kb(role)
 
+# ------------------------------
+# Открытие меню сделок
+# ------------------------------
 @dp.message_handler(lambda m: m.text in ["💼 Сделки", "Мои сделки"])
 async def open_deals_menu(message: types.Message):
     telegram_id = str(message.from_user.id)
@@ -17,84 +28,43 @@ async def open_deals_menu(message: types.Message):
         result = await session.execute(select(User).where(User.telegram_id == telegram_id))
         user = result.scalar_one_or_none()
 
-    role = user.role.value if user and user.role else "employee"
-    kb = deal_menu_kb(role)
+    kb = deal_menu_kb(user.role.value if user else "employee")
     await message.answer("📁 Раздел 'Сделки'. Выберите действие:", reply_markup=kb)
 
-
-@dp.callback_query_handler(lambda c: c.data == "back_to_main")
-async def back_to_main(callback: types.CallbackQuery):
-    telegram_id = str(callback.from_user.id)
-    async with async_session() as session:
-        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-        user = result.scalar_one_or_none()
-
-    role = user.role.value if user and user.role else "employee"
-
-    if role == "admin":
-        from keyboards.admin_kb import admin_menu as kb
-    elif role == "manager":
-        from keyboards.manager_kb import manager_menu as kb
-    else:
-        from keyboards.employee_kb import employee_menu as kb
-
-    try:
-        await callback.message.answer("🏠 Главное меню:", reply_markup=kb)
-    except Exception:
-        await callback.answer()
-    else:
-        await callback.answer()
-
-
+# ------------------------------
+# Callback главного меню
+# ------------------------------
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("deal_"))
 async def deal_main_callback(callback: types.CallbackQuery):
+    await safe_answer(callback)
     action = callback.data
 
     if action == "deal_view":
-        await show_deals(callback, page=1)
-        return
-
-    if action == "deal_add":
+        await show_deals(callback, page=1, search_name="", filter_by="")
+    elif action == "deal_add":
         await start_add_deal(callback)
-        return
-
-    if action == "deal_edit":
+    elif action == "deal_edit":
         await show_edit_deals_page(callback, page=1)
-        return
-
-    if action == "deal_delete":
+    elif action == "deal_delete":
         await show_delete_deals_page(callback, page=1)
-        return
-
-    await callback.answer("Функция пока не реализована.")
-
-@dp.callback_query_handler(lambda c: c.data == "main_back")
-async def back_to_main(callback: types.CallbackQuery):
-    """Возврат в главное меню (ReplyKeyboardMarkup)"""
-
-    telegram_id = str(callback.from_user.id)
-
-    # Получаем пользователя и его роль
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).where(User.telegram_id == telegram_id)
-        )
-        user = result.scalar_one_or_none()
-
-    role = user.role.value if user and user.role else "employee"
-
-    # Подключаем нужную меню-клавиатуру
-    if role == "admin":
-        from keyboards.admin_kb import admin_menu as kb
-    elif role == "manager":
-        from keyboards.manager_kb import manager_menu as kb
+    elif action == "deal_search":
+        await start_search_deal(callback)
+    elif action == "deal_filter":
+        await start_filter_deal(callback)
+    elif action == "deal_back":
+        telegram_id = str(callback.from_user.id)
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+            user = result.scalar_one_or_none()
+        kb = await get_main_menu_kb(user)
+        await callback.message.edit_text("📁 Раздел 'Сделки'. Выберите действие:", reply_markup=kb)
     else:
-        from keyboards.employee_kb import employee_menu as kb
+        await callback.answer("Функция пока не реализована.")
 
-    # Отправляем новое сообщение с Reply keyboard
-    try:
-        await callback.message.answer("🏠 Главное меню:", reply_markup=kb)
-    except Exception:
-        await callback.answer()
-    else:
-        await callback.answer()
+# ------------------------------
+# Регистрируем фильтры
+# ------------------------------
+try:
+    register_filter_deals(dp)
+except Exception:
+    pass

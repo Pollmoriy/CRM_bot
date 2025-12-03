@@ -1,20 +1,77 @@
-# handlers/deals/view_deals.py
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from loader import dp
-from sqlalchemy import select
+from loader import dp, safe_answer
+from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
+from datetime import datetime, timedelta
 
 from database.db import async_session_maker
-from database.models import Deal, User, Client, Task
+from database.models import Deal, User, Task, DealStage
+from keyboards.deals_pages_kb import top_deals_kb, deals_nav_kb
 
 DEALS_PER_PAGE = 5
 
-# Вспомогательная клавиатура для списка сделок
-def get_deals_keyboard(deals, page=1):
+# ------------------------------
+# Загрузка сделок с учётом роли, поиска и фильтров
+# ------------------------------
+async def load_deals(user: User, search_name: str, filter_by: str):
+    conditions = []
+
+    if search_name:
+        conditions.append(Deal.deal_name.ilike(f"%{search_name}%"))
+
+    if filter_by:
+        try:
+            f_type, f_val = filter_by.split("|", 1)
+        except:
+            f_type, f_val = "", ""
+
+        if f_type == "stage":
+            stage_value = next((e.value for e in DealStage if e.name == f_val), None)
+            if stage_value:
+                conditions.append(Deal.stage == stage_value)
+        elif f_type == "date":
+            now = datetime.now()
+            if f_val == "today":
+                date_from = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif f_val == "week":
+                date_from = now - timedelta(days=7)
+            elif f_val == "month":
+                date_from = now - timedelta(days=30)
+            else:
+                date_from = None
+            if date_from:
+                conditions.append(Deal.date_created >= date_from)
+        elif f_type == "manager":
+            try:
+                manager_id = int(f_val)
+                conditions.append(Deal.id_manager == manager_id)
+            except:
+                pass
+
+    async with async_session_maker() as session:
+        role = user.role.value if user and user.role else "employee"
+        base_query = select(Deal).options(selectinload(Deal.tasks))
+
+        if role == "manager":
+            base_query = base_query.where(Deal.id_manager == user.id_user)
+        elif role == "employee":
+            base_query = base_query.join(Task).where(Task.id_employee == user.id_user)
+
+        if conditions:
+            base_query = base_query.where(and_(*conditions))
+
+        result = await session.execute(base_query)
+        return result.scalars().all()
+
+# ------------------------------
+# Формирование клавиатуры списка сделок
+# ------------------------------
+def get_deals_keyboard(deals, page: int, search_name: str, filter_by: str):
     kb = InlineKeyboardMarkup(row_width=1)
     start = (page - 1) * DEALS_PER_PAGE
     end = start + DEALS_PER_PAGE
+
     for deal in deals[start:end]:
         kb.add(
             InlineKeyboardButton(
@@ -23,81 +80,76 @@ def get_deals_keyboard(deals, page=1):
             )
         )
 
-    nav_buttons = []
-    if page > 1:
-        nav_buttons.append(InlineKeyboardButton("◀️ Назад", callback_data=f"deal_view_page_{page-1}"))
-    if end < len(deals):
-        nav_buttons.append(InlineKeyboardButton("▶️ Далее", callback_data=f"deal_view_page_{page+1}"))
-    if nav_buttons:
-        kb.row(*nav_buttons)
+    has_next = end < len(deals)
+    nav_kb = deals_nav_kb(page, has_next, search_name, filter_by)
+    for row in nav_kb.inline_keyboard:
+        kb.row(*row)
+
+    top_kb = top_deals_kb()
+    for row in top_kb.inline_keyboard:
+        kb.row(*row)
 
     return kb
 
-# ====================== Список сделок ======================
-@dp.callback_query_handler(lambda c: c.data == "deal_view" or c.data.startswith("deal_view_page_"))
-async def show_deals(callback: types.CallbackQuery):
-    await callback.answer()
-    page = 1
-    if callback.data.startswith("deal_view_page_"):
-        page = int(callback.data.split("_")[-1])
+# ------------------------------
+# Отображение сделок
+# ------------------------------
+async def show_deals(message_or_callback, page: int, search_name: str, filter_by: str):
+    message = message_or_callback.message if isinstance(message_or_callback, types.CallbackQuery) else message_or_callback
+    telegram_id = str(message.chat.id)
 
-    telegram_id = str(callback.from_user.id)
     async with async_session_maker() as session:
-        # Получаем пользователя
-        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-        user = result.scalar_one_or_none()
-        role = user.role.value if user and user.role else "employee"
+        user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        user = user_q.scalar_one_or_none()
 
-        # Получаем сделки в зависимости от роли
-        if role == "admin":
-            result = await session.execute(select(Deal).options(selectinload(Deal.tasks)))
-            deals = result.scalars().all()
-        elif role == "manager":
-            result = await session.execute(
-                select(Deal).where(Deal.id_manager == user.id_user).options(selectinload(Deal.tasks))
-            )
-            deals = result.scalars().all()
-        else:  # employee
-            # показываем только сделки, где есть задачи на этого сотрудника
-            result = await session.execute(
-                select(Deal).join(Task).where(Task.id_employee == user.id_user).options(selectinload(Deal.tasks))
-            )
-            deals = result.scalars().all()
+    deals = await load_deals(user, search_name, filter_by)
 
     if not deals:
-        await callback.message.edit_text("Сделок пока нет.")
+        try:
+            await message.edit_text("📁 Сделок не найдено по заданным критериям.")
+        except:
+            await message.answer("📁 Сделок не найдено по заданным критериям.")
         return
 
-    kb = get_deals_keyboard(deals, page)
-    await callback.message.edit_text("📁 Список сделок:", reply_markup=kb)
+    kb = get_deals_keyboard(deals, page, search_name, filter_by)
+    try:
+        await message.edit_text("📁 Список сделок:", reply_markup=kb)
+    except:
+        await message.answer("📁 Список сделок:", reply_markup=kb)
 
-# ====================== Детали сделки ======================
+# ------------------------------
+# Детали сделки
+# ------------------------------
 @dp.callback_query_handler(lambda c: c.data.startswith("deal_detail_"))
 async def show_deal_detail(callback: types.CallbackQuery):
-    await callback.answer()
+    await safe_answer(callback)
     deal_id = int(callback.data.split("_")[-1])
-
     telegram_id = str(callback.from_user.id)
+
     async with async_session_maker() as session:
         deal = await session.get(Deal, deal_id, options=[selectinload(Deal.tasks)])
-        client = await session.get(Client, deal.id_client)
-        manager = await session.get(User, deal.id_manager)
+        user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        user = user_q.scalar_one_or_none()
 
-        user = (
-            await session.execute(select(User).where(User.telegram_id == telegram_id))
-        ).scalar_one_or_none()
-        role = user.role.value if user and user.role else "employee"
+        manager = deal.manager if deal else None
+        client = deal.client if deal else None
+
+    if not deal:
+        await callback.message.edit_text("Сделка не найдена.")
+        return
 
     num_tasks = len(deal.tasks)
-    completed_tasks = len([t for t in deal.tasks if t.status.name == "done"])
+    completed_tasks = len([t for t in deal.tasks if getattr(t.status, "name", None) == "done"])
     progress_percent = int(completed_tasks / num_tasks * 100) if num_tasks else 0
+
+    stage_display = deal.stage
 
     text = (
         f"<b>Сделка:</b> {deal.deal_name}\n"
         f"<b>Клиент:</b> {client.full_name if client else '—'}\n"
         f"<b>Менеджер:</b> {manager.full_name if manager else '—'}\n"
         f"<b>Дата создания:</b> {deal.date_created.strftime('%Y-%m-%d %H:%M') if deal.date_created else '—'}\n"
-        f"<b>Этап:</b> {deal.stage.value}\n"
+        f"<b>Этап:</b> {stage_display}\n"
         f"<b>Количество задач:</b> {num_tasks}\n"
         f"<b>Прогресс:</b> {progress_percent}%"
     )
@@ -107,18 +159,24 @@ async def show_deal_detail(callback: types.CallbackQuery):
         InlineKeyboardButton("Прогресс", callback_data=f"deal_progress_{deal.id_deal}"),
         InlineKeyboardButton("Назад", callback_data="deal_view")
     )
-
-    if role in ["admin", "manager"]:
+    if user.role.value in ["admin", "manager"]:
         kb.add(
             InlineKeyboardButton("Изменить статус", callback_data=f"deal_edit_status_{deal.id_deal}"),
-            InlineKeyboardButton("История изменений", callback_data=f"deal_history_{deal.id_deal}")
+            InlineKeyboardButton("История", callback_data=f"deal_history_{deal.id_deal}")
         )
 
     await callback.message.edit_text(text, reply_markup=kb)
 
-# ====================== Прогресс сделки ======================
-@dp.callback_query_handler(lambda c: c.data.startswith("deal_progress_"))
-async def show_deal_progress(callback: types.CallbackQuery):
-    await callback.answer()
-    deal_id = int(callback.data.split("_")[-1])
-    await callback.message.answer(f"📊 Прогресс сделки {deal_id} (пока заглушка)")
+# ------------------------------
+# Пагинация
+# ------------------------------
+@dp.callback_query_handler(lambda c: c.data.startswith("deal_view_page|"))
+async def paginate_deals(callback: types.CallbackQuery):
+    await safe_answer(callback)
+    try:
+        _, page_str, search_name, filter_by = callback.data.split("|", 3)
+        page = int(page_str)
+    except:
+        await callback.answer("Ошибка страницы.")
+        return
+    await show_deals(callback, page=page, search_name=search_name, filter_by=filter_by)
