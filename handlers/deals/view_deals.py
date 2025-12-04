@@ -4,7 +4,7 @@ from loader import dp, safe_answer
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
-
+import handlers.deals.history
 from database.db import async_session_maker
 from database.models import Deal, User, Task, DealStage
 from keyboards.deals_pages_kb import top_deals_kb, deals_nav_kb

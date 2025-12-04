@@ -7,6 +7,7 @@ import handlers.clients.menu
 import handlers.clients.view_clients
 import handlers.deals.menu
 from handlers.deals import view_deals
+from handlers.deals import history
 
 
 async def on_startup(dp):

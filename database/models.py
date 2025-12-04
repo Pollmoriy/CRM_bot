@@ -1,6 +1,6 @@
 # database/models.py (фрагмент)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Text, Date, TIMESTAMP, Enum, ForeignKey, Boolean, func
+from sqlalchemy import Column, Integer, String, Text, Date, TIMESTAMP, Enum, ForeignKey, Boolean, func, DateTime
 from sqlalchemy.orm import relationship
 import enum
 
@@ -108,3 +108,17 @@ class Task(Base):
 
     def __repr__(self):
         return f"<Task(id={self.id_task}, name={self.task_name}, status={self.status.value})>"
+
+class AuditLog(Base):
+    __tablename__ = "auditlogs"
+
+    id_log = Column(Integer, primary_key=True, autoincrement=True)
+    id_user = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"))
+    table_name = Column(String(50))
+    action = Column(Enum("insert", "update", "delete"))
+    record_id = Column(Integer)
+    action_time = Column(DateTime)
+    details = Column(Text)
+
+    # <-- добавляем отношение
+    user = relationship("User", backref="auditlogs")

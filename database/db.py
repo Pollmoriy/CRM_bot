@@ -1,8 +1,9 @@
 # database/db.py
-
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from contextlib import asynccontextmanager
+import time
 
 # 🚀 Формируем URL (MySQL через asyncmy)
 DATABASE_URL = (
@@ -26,7 +27,7 @@ async_session_maker = sessionmaker(
     expire_on_commit=False,
 )
 
-# ❗ ВАЖНО — алиас для совместимости:
+# ❗ Алиас для совместимости:
 # Теперь можно писать: async with async_session() as session:
 async_session = async_session_maker
 
@@ -34,11 +35,12 @@ async_session = async_session_maker
 Base = declarative_base()
 
 # 🧩 Контекстный менеджер для замера времени SQL
+@asynccontextmanager
 async def timed_session():
-    import time
     async with async_session() as session:
         start = time.perf_counter()
-        yield session
-        duration = time.perf_counter() - start
-        print(f"⏱ SQL-запрос выполнен за {duration:.3f} сек")
-
+        try:
+            yield session
+        finally:
+            duration = time.perf_counter() - start
+            print(f"⏱ SQL-запрос выполнен за {duration:.3f} сек")
