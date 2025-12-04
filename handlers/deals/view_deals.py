@@ -8,13 +8,14 @@ from datetime import datetime, timedelta
 from database.db import async_session_maker
 from database.models import Deal, User, Task, DealStage
 from keyboards.deals_pages_kb import top_deals_kb, deals_nav_kb
+from handlers.deals.tasks import show_tasks  # импорт функции отображения задач
 
 DEALS_PER_PAGE = 5
 
 # ------------------------------
 # Загрузка сделок с учётом роли, поиска и фильтров
 # ------------------------------
-async def load_deals(user: User, search_name: str, filter_by: str):
+async def load_deals(user: User, search_name: str = "", filter_by: str = ""):
     conditions = []
 
     if search_name:
@@ -27,6 +28,7 @@ async def load_deals(user: User, search_name: str, filter_by: str):
             f_type, f_val = "", ""
 
         if f_type == "stage":
+            # Используем значения на русском, как в БД
             stage_value = next((e.value for e in DealStage if e.name == f_val), None)
             if stage_value:
                 conditions.append(Deal.stage == stage_value)
@@ -64,6 +66,7 @@ async def load_deals(user: User, search_name: str, filter_by: str):
         result = await session.execute(base_query)
         return result.scalars().all()
 
+
 # ------------------------------
 # Формирование клавиатуры списка сделок
 # ------------------------------
@@ -91,16 +94,21 @@ def get_deals_keyboard(deals, page: int, search_name: str, filter_by: str):
 
     return kb
 
+
 # ------------------------------
 # Отображение сделок
 # ------------------------------
-async def show_deals(message_or_callback, page: int, search_name: str, filter_by: str):
+async def show_deals(message_or_callback, page: int = 1, search_name: str = "", filter_by: str = ""):
     message = message_or_callback.message if isinstance(message_or_callback, types.CallbackQuery) else message_or_callback
     telegram_id = str(message.chat.id)
 
     async with async_session_maker() as session:
         user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
         user = user_q.scalar_one_or_none()
+
+    if not user:
+        await message.answer("⚠️ Пользователь не найден.")
+        return
 
     deals = await load_deals(user, search_name, filter_by)
 
@@ -117,29 +125,22 @@ async def show_deals(message_or_callback, page: int, search_name: str, filter_by
     except:
         await message.answer("📁 Список сделок:", reply_markup=kb)
 
+
 # ------------------------------
 # Детали сделки
 # ------------------------------
 @dp.callback_query_handler(lambda c: c.data.startswith("deal_detail_"))
 async def show_deal_detail(callback: types.CallbackQuery):
     await safe_answer(callback)
-
     deal_id = int(callback.data.split("_")[-1])
     telegram_id = str(callback.from_user.id)
 
     async with async_session_maker() as session:
-        # Загружаем сделку с клиентом, менеджером и задачами
         deal = await session.get(
             Deal,
             deal_id,
-            options=[
-                selectinload(Deal.client),
-                selectinload(Deal.manager),
-                selectinload(Deal.tasks)
-            ]
+            options=[selectinload(Deal.client), selectinload(Deal.manager), selectinload(Deal.tasks)]
         )
-
-        # Загружаем пользователя
         user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
         user = user_q.scalar_one_or_none()
 
@@ -147,14 +148,12 @@ async def show_deal_detail(callback: types.CallbackQuery):
         await callback.message.edit_text("⚠️ Сделка не найдена.")
         return
 
-    # Прогресс выполнения задач
     num_tasks = len(deal.tasks)
     completed_tasks = len([t for t in deal.tasks if getattr(t.status, "name", None) == "done"])
     progress_percent = int(completed_tasks / num_tasks * 100) if num_tasks else 0
 
     stage_display = deal.stage
 
-    # Формируем текст карточки
     text = (
         f"<b>Сделка:</b> {deal.deal_name}\n"
         f"<b>Клиент:</b> {deal.client.full_name if deal.client else '—'}\n"
@@ -165,32 +164,25 @@ async def show_deal_detail(callback: types.CallbackQuery):
         f"<b>Прогресс:</b> {progress_percent}%"
     )
 
-    # Формируем клавиатуру
     kb = InlineKeyboardMarkup(row_width=2)
-
-    # Кнопки для всех пользователей
     kb.add(
         InlineKeyboardButton("Прогресс", callback_data=f"deal_progress_{deal.id_deal}"),
         InlineKeyboardButton("Задачи", callback_data=f"deal_tasks_{deal.id_deal}")
     )
 
-    # Кнопки только для admin и manager
-    if user and user.role and user.role.value in ["admin", "manager"]:
+    if user.role.value in ["admin", "manager"]:
         kb.add(
             InlineKeyboardButton("История", callback_data=f"deal_history_{deal.id_deal}"),
             InlineKeyboardButton("Изменить статус", callback_data=f"deal_edit_status_{deal.id_deal}")
         )
 
-    # Кнопка назад
-    kb.add(
-        InlineKeyboardButton("Назад", callback_data="deal_view")
-    )
+    kb.add(InlineKeyboardButton("Назад", callback_data="deal_view"))
 
-    # Отправляем или редактируем сообщение
     try:
         await callback.message.edit_text(text, reply_markup=kb)
     except:
         await callback.message.answer(text, reply_markup=kb)
+
 
 # ------------------------------
 # Пагинация
@@ -205,3 +197,23 @@ async def paginate_deals(callback: types.CallbackQuery):
         await callback.answer("Ошибка страницы.")
         return
     await show_deals(callback, page=page, search_name=search_name, filter_by=filter_by)
+
+
+# ------------------------------
+# Переход к задачам сделки
+# ------------------------------
+@dp.callback_query_handler(lambda c: c.data.startswith("deal_tasks_"))
+async def deal_tasks_handler(callback: types.CallbackQuery, state=None):
+    await safe_answer(callback)
+    deal_id = int(callback.data.split("_")[-1])
+    telegram_id = str(callback.from_user.id)
+
+    async with async_session_maker() as session:
+        user_q = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        user = user_q.scalar_one_or_none()
+
+    if not user:
+        await callback.message.answer("⚠️ Пользователь не найден.")
+        return
+
+    await show_tasks(callback, deal_id, user, page=1)
