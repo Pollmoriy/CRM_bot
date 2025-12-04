@@ -158,7 +158,7 @@ async def show_tasks(callback_or_message, deal_id: int, user: User, page: int = 
 
     kb = build_tasks_keyboard(tasks, page, deal_id, user)
     # кнопка назад к сделке
-    kb.add(InlineKeyboardButton("◀️ Назад к сделке", callback_data=f"deal_detail:{deal_id}"))
+    kb.add(InlineKeyboardButton("◀️ Назад к сделке", callback_data=f"deal_detail_{deal_id}"))
 
     try:
         if is_callback:
