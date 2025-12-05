@@ -1,3 +1,5 @@
+# handlers/deals/view_deals.py
+
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from loader import dp, safe_answer
@@ -5,6 +7,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
 import handlers.deals.history
+import handlers.deals.progress
 from database.db import async_session_maker
 from database.models import Deal, User, Task, DealStage
 from keyboards.deals_pages_kb import top_deals_kb, deals_nav_kb
@@ -167,7 +170,7 @@ async def show_deal_detail(callback: types.CallbackQuery):
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
         InlineKeyboardButton("Прогресс", callback_data=f"deal_progress_{deal.id_deal}"),
-        InlineKeyboardButton("Задачи", callback_data=f"deal_tasks_{deal.id_deal}")
+    InlineKeyboardButton("Задачи", callback_data=f"deal_tasks_{deal.id_deal}")
     )
 
     if user.role.value in ["admin", "manager"]:
