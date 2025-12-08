@@ -176,7 +176,6 @@ async def show_deal_detail(callback: types.CallbackQuery):
     if user.role.value in ["admin", "manager"]:
         kb.add(
             InlineKeyboardButton("История", callback_data=f"deal_history_{deal.id_deal}"),
-            InlineKeyboardButton("Изменить статус", callback_data=f"deal_edit_status_{deal.id_deal}")
         )
 
     kb.add(InlineKeyboardButton("Назад", callback_data="deal_view"))

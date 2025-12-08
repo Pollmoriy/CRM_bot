@@ -109,8 +109,6 @@ async def show_deal_progress(callback: types.CallbackQuery):
             f"<b>Выполнено:</b> {completed_tasks}\n"
             f"<b>Прогресс:</b> {progress_percent}%\n\n"
             f"Этот круг показывает визуально, насколько близка сделка к завершению. "
-            f"Даже если процент равен 0, круг серый, а прогресс будет постепенно закрашиваться по мере выполнения задач. "
-            f"Цвет заполнения: <code>#86eae9</code>, цвет текста процента: <code>#353c6e</code>."
         )
 
         kb = types.InlineKeyboardMarkup()
