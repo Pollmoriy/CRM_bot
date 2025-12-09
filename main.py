@@ -14,6 +14,8 @@ import handlers.deals.history
 import handlers.deals.progress
 import handlers.deals.tasks
 from handlers.admin import users
+from handlers.manager import manager_employees
+
 
 async def on_startup(dp):
     await init_db()
