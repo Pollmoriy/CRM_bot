@@ -2,6 +2,7 @@
 from datetime import date
 from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
+from utils.notifications.send_closed_deal import notify_closed_deal
 
 from database.db import async_session_maker
 from database.models import Task, Deal
