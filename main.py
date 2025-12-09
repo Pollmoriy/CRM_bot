@@ -11,9 +11,9 @@ import handlers.clients.view_clients
 import handlers.deals.menu
 import handlers.deals.view_deals
 import handlers.deals.history
-import handlers.deals.progress   # <= ВАЖНО!!
+import handlers.deals.progress
 import handlers.deals.tasks
-
+from handlers.admin import users
 
 async def on_startup(dp):
     await init_db()

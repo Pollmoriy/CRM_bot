@@ -21,6 +21,7 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.employee)
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
     manager_id = Column(Integer)  # FK уже в БД, SQLAlchemy можно добавить ForeignKey при желании
+    is_active = Column(Boolean, default=True, nullable=False)
 
     def __repr__(self):
         return f"<User(id={self.id_user}, name={self.full_name})>"
