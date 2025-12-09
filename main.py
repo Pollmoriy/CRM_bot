@@ -16,15 +16,33 @@ import handlers.deals.tasks
 from handlers.admin import users
 from handlers.manager import manager_employees
 
+# APScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from utils.notifications.reminders import check_task_reminders, check_closed_deals
+
+scheduler = AsyncIOScheduler()
+
 
 async def on_startup(dp):
     await init_db()
     print("🤖 Бот успешно запущен!")
 
+    # Запускаем периодические задачи (через scheduler)
+    # - напоминания о дедлайнах (раз в 24 часа). Для тестирования можно поставить minutes=1
+    scheduler.add_job(check_task_reminders, "interval", hours=24, id="task_reminders")
+    # - проверка закрытых сделок (раз в 1 час или 24 часа, в зависимости от требований)
+    scheduler.add_job(check_closed_deals, "interval", hours=1, id="closed_deals_check")
+    scheduler.start()
+    print("🕒 Планировщик запущен (jobs: task_reminders, closed_deals_check)")
+
 
 async def on_shutdown(dp):
     print("🛑 Завершение работы... Закрытие соединений с БД.")
-    await bot.session.close()
+    try:
+        await bot.session.close()
+    except Exception:
+        pass
+    scheduler.shutdown(wait=False)
 
 
 if __name__ == "__main__":

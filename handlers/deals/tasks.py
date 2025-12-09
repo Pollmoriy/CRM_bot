@@ -9,6 +9,8 @@ from database.db import async_session_maker
 from database.models import Deal, User, Task, TaskStatus, TaskPriority, UserRole
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
+from utils.notifications.helpers import format_new_task
+from utils.notifications.send import create_notification
 
 from keyboards.task_filters_kb import task_filters_kb
 
@@ -343,13 +345,16 @@ async def task_form_deadline(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda c: c.data.startswith("task_assign:"), state=TaskForm.employee)
 async def task_form_assign(query: types.CallbackQuery, state: FSMContext):
     await safe_answer(query)
+
+    # --- Получаем ID сотрудника ---
     try:
         _, emp_s = query.data.split(":", 1)
         emp_id = int(emp_s)
     except Exception:
-        await query.answer("Ошибка")
+        await query.answer("Ошибка при выборе сотрудника")
         return
 
+    # --- Достаём данные из FSM ---
     data = await state.get_data()
     deal_id = data.get("deal_id")
     name = data.get("name")
@@ -358,6 +363,8 @@ async def task_form_assign(query: types.CallbackQuery, state: FSMContext):
     deadline = data.get("deadline", None)
 
     async with async_session_maker() as session:
+
+        # --- Создаём задачу ---
         new_task = Task(
             task_name=name,
             description=description,
@@ -370,9 +377,30 @@ async def task_form_assign(query: types.CallbackQuery, state: FSMContext):
         session.add(new_task)
         await session.commit()
 
+        # важно! нужно обновить объект, чтобы получить id_task
+        await session.refresh(new_task)
+
+        # Получаем сделку для текста уведомления
+        deal = await session.get(Deal, deal_id)
+        deal_name = deal.deal_name if deal else "—"
+
+    # --- Уведомление о новой задаче ---
+    from utils.notifications.helpers import format_new_task
+    from utils.notifications.send import create_notification
+
+    await create_notification(
+        employee_id=emp_id,
+        title="Новая задача",
+        content=format_new_task(task_name=name, deal_name=deal_name),
+        task_id=new_task.id_task,
+        deal_id=deal_id
+    )
+
+    # --- Ответ пользователю (менеджеру) ---
     await query.message.answer("✅ Задача создана.")
     await state.finish()
 
+    # --- Обновление списка задач (если пользователь — менеджер) ---
     user = await get_user_by_telegram(str(query.from_user.id))
     if user:
         await show_tasks(query, deal_id, user, page=1)

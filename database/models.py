@@ -123,3 +123,26 @@ class AuditLog(Base):
 
     # <-- добавляем отношение
     user = relationship("User", backref="auditlogs")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id_notification = Column(Integer, primary_key=True, autoincrement=True)
+
+    id_employee = Column(Integer, ForeignKey("users.id_user", ondelete="CASCADE"), nullable=False)
+    id_task = Column(Integer, ForeignKey("tasks.id_task", ondelete="CASCADE"), nullable=True)
+    id_deal = Column(Integer, ForeignKey("deals.id_deal", ondelete="CASCADE"), nullable=True)
+
+    title = Column(String(150), nullable=True)
+    content = Column(Text, nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    # ORM relationships
+    employee = relationship("User", backref="notifications")
+    task = relationship("Task", backref="notifications")
+    deal = relationship("Deal", backref="notifications")
+
+    def __repr__(self):
+        return f"<Notification(id={self.id_notification}, employee={self.id_employee}, deal={self.id_deal}, task={self.id_task})>"
