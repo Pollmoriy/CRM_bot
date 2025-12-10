@@ -15,6 +15,9 @@ import handlers.deals.progress
 import handlers.deals.tasks
 from handlers.admin import users
 from handlers.manager import manager_employees
+from handlers.reports.reports_menu import register_reports_menu
+
+register_reports_menu(dp)
 
 # APScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
