@@ -19,9 +19,12 @@ from handlers.reports.reports_menu import register_reports_menu
 from handlers.reports.manager_reports import register_manager_reports
 from handlers.employee import employee_tasks
 from handlers.reports.manager_deals_report import register_manager_deals_report
+from handlers.reports.manager_tasks_timeline import register_manager_timeline_report
 
-register_manager_deals_report(dp)
+
 # регистрация хендлеров
+register_manager_timeline_report(dp)
+register_manager_deals_report(dp)
 register_manager_reports(dp)
 register_reports_menu(dp)
 
