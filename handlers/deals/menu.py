@@ -21,7 +21,7 @@ async def get_main_menu_kb(user: User):
 # ------------------------------
 # Открытие меню сделок
 # ------------------------------
-@dp.message_handler(lambda m: m.text in ["💼 Сделки", "Мои сделки"])
+@dp.message_handler(lambda m: m.text in ["💼 Сделки", "💼 Мои сделки"])
 async def open_deals_menu(message: types.Message):
     telegram_id = str(message.from_user.id)
     async with async_session() as session:

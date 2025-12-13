@@ -22,7 +22,7 @@ async def get_user_role(telegram_id: int) -> str:
     return user.role.value if user and user.role else "employee"
 
 
-@dp.message_handler(lambda m: m.text in ["👥 Клиенты", "Клиенты"])
+@dp.message_handler(lambda m: m.text in ["👥 Клиенты", "Клиенты", "👥 Мои клиенты"])
 async def open_clients_from_main_menu(message: types.Message):
     role = await get_user_role(message.from_user.id)
     kb = client_menu_kb(role)

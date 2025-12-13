@@ -7,5 +7,4 @@ employee_menu.add(
 )
 employee_menu.add(
     KeyboardButton("✅ Мои задачи"),
-    KeyboardButton("📊 Отчёты")
 )

@@ -17,6 +17,7 @@ from handlers.admin import users
 from handlers.manager import manager_employees
 from handlers.reports.reports_menu import register_reports_menu
 from handlers.reports.manager_reports import register_manager_reports
+from handlers.employee import employee_tasks
 
 # регистрация хендлеров
 register_manager_reports(dp)
