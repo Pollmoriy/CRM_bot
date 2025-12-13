@@ -66,10 +66,10 @@ async def report_manager_tasks_cb_handler(query: types.CallbackQuery):
         employees = list(data.keys())
         statuses = [TaskStatus.done, TaskStatus.in_progress, TaskStatus.new, TaskStatus.overdue]
         colors = {
-            TaskStatus.done: "#4CAF50",  # зелёный
-            TaskStatus.in_progress: "#2196F3",  # синий
-            TaskStatus.new: "#FFC107",  # жёлтый
-            TaskStatus.overdue: "#F44336",  # красный
+            TaskStatus.done: "#2E7D32",  # тёмно-зелёный — выполнено (уверенность, результат)
+            TaskStatus.in_progress: "#1565C0",  # глубокий синий — в работе (процесс)
+            TaskStatus.new: "#F9A825",  # приглушённый янтарный — новые
+            TaskStatus.overdue: "#C62828",  # тёмно-красный — просроченные (внимание)
         }
 
         # Инициализация нижней границы для стека
