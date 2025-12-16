@@ -24,9 +24,11 @@ from handlers.reports.admin_performance_report import register_admin_performance
 from handlers.reports.admin_deals_report import register_admin_deals_report
 from handlers.reports.admin_sales_report import register_admin_sales_report
 from handlers.reports.admin_sales_funnel import register_admin_funnel_report
+from handlers.reports.admin_timeline import register_admin_timeline_report
 
 
 # регистрация хендлеров
+register_admin_timeline_report(dp)
 register_admin_funnel_report(dp)
 register_admin_sales_report(dp)
 register_admin_deals_report(dp)
