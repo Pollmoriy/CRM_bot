@@ -7,34 +7,12 @@ import torch
 import matplotlib.pyplot as plt
 from aiogram import types, Dispatcher
 from sqlalchemy import select
-
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from handlers.reports.ai_model import tokenizer, model
 
 from database.db import async_session_maker
 from database.models import User, Task, TaskStatus
 
 
-# ============================================================
-# 🔹 ЗАГРУЗКА ЛОКАЛЬНОЙ ИИ-МОДЕЛИ (ОДИН РАЗ ПРИ СТАРТЕ БОТА)
-# ============================================================
-
-MODEL_PATH = "models/tinyllama"
-
-print("⚙️ Загружаем локальную ИИ-модель (TinyLlama)...")
-
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_PATH,
-    use_fast=False
-)
-
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_PATH,
-    torch_dtype=torch.float32
-)
-
-model.eval()
-
-print("✅ Локальная модель TinyLlama загружена")
 
 
 # ============================================================
