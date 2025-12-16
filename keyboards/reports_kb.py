@@ -18,7 +18,7 @@ def reports_menu_kb(role: str):
             InlineKeyboardButton("💰 Продажи по клиентам", callback_data="report_admin_sales"),
             InlineKeyboardButton("🪣 Воронка продаж", callback_data="report_admin_funnel"),
             InlineKeyboardButton("📅 Динамика по периодам", callback_data="report_admin_timeline"),
-            InlineKeyboardButton("🤖 AI-анализ бизнеса", callback_data="report_admin_ai"),
+            InlineKeyboardButton("🤖 Сделать отчет", callback_data="report"),
         )
 
     return kb

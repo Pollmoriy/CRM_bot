@@ -20,6 +20,7 @@ from handlers.reports.manager_reports import register_manager_reports
 from handlers.employee import employee_tasks
 from handlers.reports.manager_deals_report import register_manager_deals_report
 from handlers.reports.manager_tasks_timeline import register_manager_timeline_report
+from handlers.reports.admin_performance_report import register_admin_performance_report
 
 
 # регистрация хендлеров
@@ -27,6 +28,8 @@ register_manager_timeline_report(dp)
 register_manager_deals_report(dp)
 register_manager_reports(dp)
 register_reports_menu(dp)
+register_admin_performance_report(dp)
+
 
 # APScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
