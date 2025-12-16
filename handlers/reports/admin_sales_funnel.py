@@ -1,4 +1,5 @@
 # handlers/reports/admin_sales_funnel.py
+
 import os
 from collections import OrderedDict
 
@@ -14,9 +15,9 @@ async def report_admin_funnel_cb_handler(query: types.CallbackQuery):
     await query.answer("⏳ Формирую воронку продаж...")
 
     async with async_session_maker() as session:
+        # --- Получаем количество сделок по этапам ---
         result = await session.execute(
-            select(Deal.stage, func.count(Deal.id_deal))
-            .group_by(Deal.stage)
+            select(Deal.stage, func.count(Deal.id_deal)).group_by(Deal.stage)
         )
         rows = result.all()
 
@@ -24,11 +25,17 @@ async def report_admin_funnel_cb_handler(query: types.CallbackQuery):
         await query.message.answer("ℹ️ Сделки отсутствуют.")
         return
 
+    # --- Отладка: показываем сырые данные ---
+    print("⚡ DEBUG: raw rows from DB:")
+    for stage, count in rows:
+        print(f"   stage: {stage}, count: {count}")
+
     raw = {}
     for stage, count in rows:
         name = stage.value if hasattr(stage, "value") else stage
         raw[name] = count
 
+    # --- Упорядочиваем этапы воронки ---
     stages = OrderedDict([
         ("Новая", raw.get("Новая", 0)),
         ("В работе", raw.get("В работе", 0)),
@@ -38,30 +45,33 @@ async def report_admin_funnel_cb_handler(query: types.CallbackQuery):
 
     values = list(stages.values())
     labels = list(stages.keys())
+    total_deals = sum(values)
 
-    total = values[0]
-    if total == 0:
+    # --- Отладка ---
+    print(f"⚡ DEBUG: stages OrderedDict: {stages}")
+    print(f"⚡ DEBUG: total_deals: {total_deals}")
+
+    if total_deals == 0:
         await query.message.answer("ℹ️ Недостаточно данных для анализа воронки.")
         return
 
-    # --- ФИКСИРОВАННАЯ ФОРМА ВОРОНКИ ---
+    # --- Фиксированная форма воронки ---
     widths = [1.0, 0.78, 0.56, 0.38]
-    colors = ["#E3F2FD", "#90CAF9", "#64B5F6", "#1E88E5"]
+    # прежний блок цветов заменяем на градиент синего
+    colors = ["#E3F2FD", "#90CAF9", "#64B5F6", "#1E88E5"]  # градиент синего
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
     for i, (label, value, width) in enumerate(zip(labels, values, widths)):
         left = 0.5 - width / 2
-
         ax.barh(
             y=i,
             width=width,
             left=left,
-            height=1.0,  # без зазоров
+            height=1.0,
             color=colors[i],
-            linewidth=0  # без обводки
+            linewidth=0
         )
-
         ax.text(
             0.5,
             i,
@@ -77,14 +87,7 @@ async def report_admin_funnel_cb_handler(query: types.CallbackQuery):
     ax.set_yticks([])
     ax.set_xticks([])
     ax.invert_yaxis()
-
-    ax.set_title(
-        "Воронка продаж (все сотрудники)",
-        fontsize=15,
-        fontweight="bold",
-        pad=20
-    )
-
+    ax.set_title("Воронка продаж (все сотрудники)", fontsize=15, fontweight="bold", pad=20)
     for spine in ax.spines.values():
         spine.set_visible(False)
 
@@ -93,17 +96,18 @@ async def report_admin_funnel_cb_handler(query: types.CallbackQuery):
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()
 
-    # --- КОНВЕРСИИ ---
+    # --- Конверсии ---
     conversion_lines = []
-
+    prev_total = total_deals
     for i in range(len(values) - 1):
-        if values[i] > 0:
-            conv = round(values[i + 1] / values[i] * 100, 1)
-            conversion_lines.append(
-                f"• {labels[i]} → {labels[i+1]}: {conv}%"
-            )
+        curr_val = values[i + 1]
+        conv = round(curr_val / prev_total * 100, 1) if prev_total > 0 else 0
+        conversion_lines.append(f"• {labels[i]} → {labels[i+1]}: {conv}%")
+        print(f"⚡ DEBUG: {labels[i]} → {labels[i+1]} | prev_total={prev_total}, curr_val={curr_val}, conv={conv}%")
+        prev_total = values[i + 1] if values[i + 1] > 0 else 1  # избегаем деления на 0
 
-    overall_conv = round(values[-1] / values[0] * 100, 1)
+    overall_conv = round(stages["Закрыта"] / total_deals * 100, 1)
+    print(f"⚡ DEBUG: overall conversion: {overall_conv}")
 
     caption = (
         "🪣 *Воронка продаж*\n\n"
@@ -126,3 +130,4 @@ def register_admin_funnel_report(dp: Dispatcher):
         report_admin_funnel_cb_handler,
         lambda c: c.data == "report_admin_funnel"
     )
+    print("✅ Хендлер report_admin_funnel_cb_handler зарегистрирован")

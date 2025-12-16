@@ -90,7 +90,7 @@ async def report_admin_performance_cb_handler(query: types.CallbackQuery):
         caption = "\n".join(caption_lines)
 
         ax.set_xlabel("Количество задач", fontsize=12)
-        ax.set_title(f"📊 Активность сотрудников (на {date.today()})", fontsize=14, fontweight="bold")
+        ax.set_title(f"Активность сотрудников (на {date.today()})", fontsize=14, fontweight="bold")
         ax.legend()
         plt.tight_layout()
 
