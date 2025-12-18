@@ -6,7 +6,7 @@ from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
 from sqlalchemy import select
-
+import traceback
 from database.db import async_session_maker
 from database.models import User, Deal, Task, TaskStatus
 
@@ -15,14 +15,16 @@ from handlers.reports.generators import (
     admin_deals,
     admin_sales,
     admin_funnel,
-    admin_timeline
+    admin_timeline,
+    admin_tables
 )
+
 
 # -------------------------------------------------
 # 🖼 ЗАМЕНА ДИАГРАММ (ОТДЕЛЬНО!)
 # -------------------------------------------------
 def replace_diagram_placeholders(doc, diagram_map: dict):
-    print("🖼 Начинаю замену диаграмм")
+    print("🖼 Начинаю замену диаграмм/таблиц")
 
     for p_idx, paragraph in enumerate(doc.paragraphs):
         for placeholder, image_path in diagram_map.items():
@@ -34,9 +36,9 @@ def replace_diagram_placeholders(doc, diagram_map: dict):
 
                 if os.path.exists(image_path):
                     run.add_picture(image_path, width=Inches(6))
-                    print(f"✅ Диаграмма вставлена: {image_path}")
+                    print(f"✅ Вставлено изображение: {image_path}")
                 else:
-                    run.add_text(f"[Диаграмма {placeholder} недоступна]")
+                    run.add_text(f"[Изображение {placeholder} недоступно]")
                     print(f"⚠️ Файл не найден: {image_path}")
 
 
@@ -175,6 +177,9 @@ async def report_period_cb_handler(query: types.CallbackQuery):
         await admin_sales.generate_admin_sales_diagram(start_date, end_date, label)
         await admin_funnel.generate_admin_sales_funnel(start_date, end_date, label)
         await admin_timeline.generate_admin_tasks_timeline_diagram(start_date, end_date, label)
+        sales_table_path = await admin_tables.generate_admin_sales_table(start_date, end_date, label)
+        performance_table_path = await admin_tables.generate_admin_performance_table(start_date, end_date, label)
+
 
         # -------------------------
         # 📄 WORD → PDF
@@ -195,6 +200,13 @@ async def report_period_cb_handler(query: types.CallbackQuery):
             "{{diagram_admin_sales}}": f"reports/images/admin_sales_by_clients_{label}.png",
             "{{diagram_admin_funnel}}": f"reports/images/admin_sales_funnel_{label}.png",
             "{{diagram_admin_timeline}}": f"reports/images/admin_tasks_timeline_{label}.png",
+        })
+
+
+
+        replace_diagram_placeholders(doc, {
+            "{{table_admin_sales}}": sales_table_path,
+            "{{table_admin_performance}}": performance_table_path
         })
 
         # 📝 текст
@@ -221,15 +233,20 @@ async def report_period_cb_handler(query: types.CallbackQuery):
 
         await query.message.answer_document(
             types.InputFile(pdf_path),
-            caption=f"📄 Отчёт за {period_days} дней сформирован"
+            caption=f"📄 Отчёт за {period_days} дней сформирован",
+            parse_mode = None
         )
 
         print("✅ Отчёт успешно отправлен")
 
     except Exception as e:
-        print("⚠️ Ошибка генерации отчёта:", e)
-        await query.message.answer(f"⚠️ Ошибка генерации отчёта: {e}")
+        print("⚠️ Ошибка генерации отчёта:")
+        traceback.print_exc()
 
+        await query.message.answer(
+            "⚠️ Произошла ошибка при формировании отчёта.\n"
+            "Подробности смотри в логах."
+        )
 
 def register_admin_generate_report(dp: Dispatcher):
     dp.register_callback_query_handler(generate_report_cb_handler, lambda c: c.data == "report")
