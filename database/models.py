@@ -164,3 +164,18 @@ class Report(Base):
 
     # Связь с пользователем, который сгенерировал отчёт
     user = relationship("User", back_populates="reports")
+
+
+class Interaction(Base):
+    __tablename__ = "interactions"
+
+    id_interaction = Column(Integer, primary_key=True, autoincrement=True)
+    id_client = Column(Integer, ForeignKey("clients.id_client", ondelete="CASCADE"), nullable=True)
+    id_user = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"), nullable=True)
+    interaction_type = Column(Enum("call", "meeting", "message", "email", name="interaction_types"), default="message")
+    description = Column(Text, nullable=True)
+    date = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    # Связи
+    user = relationship("User", backref="interactions")
+    client = relationship("Client", backref="interactions")

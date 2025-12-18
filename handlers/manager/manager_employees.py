@@ -187,15 +187,29 @@ async def send_msg_to_employee(message: types.Message, state: FSMContext):
     async with async_session_maker() as session:
         employee = await session.get(User, emp_id)
 
-    if not employee or not employee.telegram_id:
-        await message.answer("Невозможно отправить сообщение. Telegram ID не найден.")
-        await state.finish()
-        return
+        if not employee or not employee.telegram_id:
+            await message.answer("Невозможно отправить сообщение. Telegram ID не найден.")
+            await state.finish()
+            return
 
-    try:
-        await bot.send_message(chat_id=employee.telegram_id, text=message.text)
-        await message.answer("✅ Сообщение отправлено сотруднику.")
-    except Exception as e:
-        await message.answer(f"⚠️ Ошибка при отправке сообщения: {e}")
+        try:
+            # 1️⃣ Отправка сообщения
+            await bot.send_message(chat_id=employee.telegram_id, text=message.text)
+            await message.answer("✅ Сообщение отправлено сотруднику.")
+
+            # 2️⃣ Сохранение взаимодействия в таблицу
+            interaction = Interaction(
+                id_user=message.from_user.id,  # кто отправил
+                id_client=None,                # можно передавать id_client, если сообщение по клиенту
+                interaction_type="message",
+                description=message.text
+            )
+            session.add(interaction)
+            await session.commit()
+            await message.answer("💾 Взаимодействие автоматически сохранено в истории.")
+
+        except Exception as e:
+            await message.answer(f"⚠️ Ошибка при отправке сообщения: {e}")
 
     await state.finish()
+
