@@ -179,3 +179,15 @@ class Interaction(Base):
     # Связи
     user = relationship("User", backref="interactions")
     client = relationship("Client", backref="interactions")
+
+class Mailing(Base):
+    __tablename__ = "mailings"
+
+    id_mailing = Column(Integer, primary_key=True, autoincrement=True)
+    mailing_name = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    target_segment = Column(Enum("new", "regular", "vip", "all", name="client_segments"), default="all")
+    created_by = Column(Integer, ForeignKey("users.id_user", ondelete="SET NULL"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    creator = relationship("User", backref="mailings")

@@ -2,8 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 admin_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 admin_menu.add(
-    KeyboardButton("⚙️ Пользователи"),
-    KeyboardButton("📈 Статистика"),
+    KeyboardButton("⚙️ Пользователи")
 )
 admin_menu.add(
     KeyboardButton("👥 Клиенты"),

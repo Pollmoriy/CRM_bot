@@ -27,7 +27,8 @@ from handlers.reports.admin_sales_funnel import register_admin_funnel_report
 from handlers.reports.admin_timeline import register_admin_timeline_report
 from handlers.reports import admin_generate_report
 
-
+# Хендлеры рассылок
+import handlers.broadcasts.roadcasts
 
 # регистрация хендлеров
 admin_generate_report.register_admin_generate_report(dp)
@@ -41,10 +42,10 @@ register_manager_reports(dp)
 register_reports_menu(dp)
 register_admin_performance_report(dp)
 
-
 # APScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from utils.notifications.reminders import check_task_reminders, check_closed_deals
+from handlers.broadcasts.roadcasts import birthday_broadcast_task
 
 scheduler = AsyncIOScheduler()
 
@@ -53,13 +54,16 @@ async def on_startup(dp):
     await init_db()
     print("🤖 Бот успешно запущен!")
 
-    # Запускаем периодические задачи (через scheduler)
-    # - напоминания о дедлайнах (раз в 24 часа). Для тестирования можно поставить minutes=1
+    # Запускаем периодические задачи через scheduler
+    # - напоминания о дедлайнах (раз в 24 часа)
     scheduler.add_job(check_task_reminders, "interval", hours=24, id="task_reminders")
-    # - проверка закрытых сделок (раз в 1 час или 24 часа, в зависимости от требований)
+    # - проверка закрытых сделок (раз в 1 час)
     scheduler.add_job(check_closed_deals, "interval", hours=1, id="closed_deals_check")
+    # - автоматическая рассылка поздравлений с ДР (раз в 24 часа)
+    scheduler.add_job(birthday_broadcast_task, "interval", hours=24, id="birthday_broadcasts")
+
     scheduler.start()
-    print("🕒 Планировщик запущен (jobs: task_reminders, closed_deals_check)")
+    print("🕒 Планировщик запущен (jobs: task_reminders, closed_deals_check, birthday_broadcasts)")
 
 
 async def on_shutdown(dp):
