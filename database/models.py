@@ -23,6 +23,8 @@ class User(Base):
     manager_id = Column(Integer)  # FK уже в БД, SQLAlchemy можно добавить ForeignKey при желании
     is_active = Column(Boolean, default=True, nullable=False)
 
+    reports = relationship("Report", back_populates="user")
+
     def __repr__(self):
         return f"<User(id={self.id_user}, name={self.full_name})>"
 
@@ -146,3 +148,19 @@ class Notification(Base):
 
     def __repr__(self):
         return f"<Notification(id={self.id_notification}, employee={self.id_employee}, deal={self.id_deal}, task={self.id_task})>"
+
+class Report(Base):
+    __tablename__ = 'reports'
+
+    id_report = Column(Integer, primary_key=True, autoincrement=True)
+    report_name = Column(String(150), nullable=False)
+    report_type = Column(
+        Enum('summary', 'performance', 'sales', 'ai_analysis', name='report_types'),
+        default='summary'
+    )
+    generated_by = Column(Integer, ForeignKey('users.id_user', ondelete='SET NULL'), nullable=True)
+    generated_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    ai_summary = Column(Text, nullable=True)
+
+    # Связь с пользователем, который сгенерировал отчёт
+    user = relationship("User", back_populates="reports")

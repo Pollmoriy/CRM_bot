@@ -8,7 +8,7 @@ from docx2pdf import convert
 from sqlalchemy import select
 import traceback
 from database.db import async_session_maker
-from database.models import User, Deal, Task, TaskStatus
+from database.models import User, Deal, Task, TaskStatus, Report
 import torch
 from handlers.reports.ai_model import tokenizer, model
 from handlers.reports.generators import (
@@ -319,6 +319,19 @@ async def report_period_cb_handler(query: types.CallbackQuery):
         await query.message.answer(
             "⚠️ Произошла ошибка при формировании отчёта.\nПодробности смотри в логах."
         )
+
+    ai_summary_text = generate_ai_recommendation(stats)
+
+    async with async_session_maker() as session:
+        report = Report(
+            report_name=f"Отчёт администратора за {period_days} дней",
+            report_type='ai_analysis',  # или 'summary', можно динамически менять
+            generated_by=admin.id_user if admin else None,
+            ai_summary=ai_summary_text
+        )
+        session.add(report)
+        await session.commit()
+        print(f"💾 Отчёт сохранён в БД с id {report.id_report}")
 
 
 def register_admin_generate_report(dp: Dispatcher):
