@@ -155,7 +155,7 @@ async def show_deal_detail(callback: types.CallbackQuery):
     completed_tasks = len([t for t in deal.tasks if getattr(t.status, "name", None) == "done"])
     progress_percent = int(completed_tasks / num_tasks * 100) if num_tasks else 0
 
-    stage_display = deal.stage
+    stage_display = deal.stage.value
 
     text = (
         f"<b>Сделка:</b> {deal.deal_name}\n"

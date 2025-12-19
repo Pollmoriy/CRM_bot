@@ -243,7 +243,7 @@ async def open_user(callback: types.CallbackQuery):
         await callback.message.edit_text(
             f"👤 <b>{user.full_name}</b>\n"
             f"ID: {user.id_user}\n"
-            f"Роль: {user.role}\n"
+            f"Роль: {user.role.value}\n"
             f"Статус: {'Активен' if user.is_active else 'Заблокирован'}",
             reply_markup=user_actions_kb(user)
         )

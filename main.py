@@ -26,6 +26,7 @@ from handlers.reports.admin_sales_report import register_admin_sales_report
 from handlers.reports.admin_sales_funnel import register_admin_funnel_report
 from handlers.reports.admin_timeline import register_admin_timeline_report
 from handlers.reports import admin_generate_report
+from handlers import help
 
 # Хендлеры рассылок
 import handlers.broadcasts.roadcasts
