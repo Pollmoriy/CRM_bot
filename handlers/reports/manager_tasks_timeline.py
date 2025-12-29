@@ -200,7 +200,7 @@ async def report_manager_timeline_cb_handler(query: types.CallbackQuery):
         print(f"✅ Диаграмма сохранена: {filename}")
 
         # Генерация ИИ-рекомендаций
-        ai_text = generate_ai_recommendations(stats)
+        #ai_text = generate_ai_recommendations(stats)
 
         # Подпись для отправки
         caption = (
@@ -210,7 +210,7 @@ async def report_manager_timeline_cb_handler(query: types.CallbackQuery):
             f"• Завершено: {stats['done']} ({round(stats['done']/stats['total']*100,1) if stats['total'] else 0}%)\n"
             f"• Просрочено: {stats['overdue']} ({round(stats['overdue']/stats['total']*100,1) if stats['total'] else 0}%)\n"
             f"• Всего задач: {stats['total']}\n\n"
-            f"🤖 Рекомендации ИИ:\n{ai_text}"
+            #f"🤖 Рекомендации ИИ:\n{ai_text}"
         )
 
         # Отправка

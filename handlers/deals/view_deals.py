@@ -11,8 +11,7 @@ import handlers.deals.progress
 from database.db import async_session_maker
 from database.models import Deal, User, Task, DealStage
 from keyboards.deals_pages_kb import top_deals_kb, deals_nav_kb
-from handlers.deals.tasks import show_tasks  # импорт функции отображения задач
-
+from handlers.deals.tasks import show_tasks
 DEALS_PER_PAGE = 5
 
 # ------------------------------

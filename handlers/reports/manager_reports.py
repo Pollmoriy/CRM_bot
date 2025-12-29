@@ -207,7 +207,7 @@ async def report_manager_tasks_cb_handler(query: types.CallbackQuery):
         # 🔹 ИИ-РЕКОМЕНДАЦИИ
         # ====================================================
 
-        ai_text = generate_ai_recommendations(stats)
+        #ai_text = generate_ai_recommendations(stats)
 
         caption = (
             "📊 Нагрузка и эффективность сотрудников\n\n"
@@ -216,7 +216,7 @@ async def report_manager_tasks_cb_handler(query: types.CallbackQuery):
             f"• В работе: {avg_in_progress}\n"
             f"• Новые: {avg_new}\n"
             f"• Просроченные: {avg_overdue}\n\n"
-            f"🤖 Рекомендации ИИ:\n{ai_text}"
+            #f"🤖 Рекомендации ИИ:\n{ai_text}"
         )
 
         await query.message.answer_photo(
