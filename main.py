@@ -57,11 +57,11 @@ async def on_startup(dp):
 
     # Запускаем периодические задачи через scheduler
     # - напоминания о дедлайнах (раз в 24 часа)
-    scheduler.add_job(check_task_reminders, "interval", hours=0.01, id="task_reminders")
+    scheduler.add_job(check_task_reminders, "interval", hours=24, id="task_reminders")
     # - проверка закрытых сделок (раз в 1 час)
-    scheduler.add_job(check_closed_deals, "interval", hours=0.01, id="closed_deals_check")
+    scheduler.add_job(check_closed_deals, "interval", hours=1, id="closed_deals_check")
     # - автоматическая рассылка поздравлений с ДР (раз в 24 часа)
-    scheduler.add_job(birthday_broadcast_task, "interval", hours=0.01, id="birthday_broadcasts")
+    scheduler.add_job(birthday_broadcast_task, "interval", hours=24, id="birthday_broadcasts")
 
     scheduler.start()
     print("🕒 Планировщик запущен (jobs: task_reminders, closed_deals_check, birthday_broadcasts)")

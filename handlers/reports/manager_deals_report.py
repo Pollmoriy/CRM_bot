@@ -163,7 +163,7 @@ async def report_manager_deals_cb_handler(query: types.CallbackQuery):
         plt.close()
 
         # --- Генерация ИИ-рекомендаций ---
-        #ai_text = generate_ai_recommendations_deals(ai_stats)
+        ai_text = generate_ai_recommendations_deals(ai_stats)
 
         caption = (
             f"📊 Прогресс сделок менеджера {manager.full_name}\n\n"

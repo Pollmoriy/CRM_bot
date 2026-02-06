@@ -200,7 +200,7 @@ async def report_manager_timeline_cb_handler(query: types.CallbackQuery):
         print(f"✅ Диаграмма сохранена: {filename}")
 
         # Генерация ИИ-рекомендаций
-        #ai_text = generate_ai_recommendations(stats)
+        ai_text = generate_ai_recommendations(stats)
 
         # Подпись для отправки
         caption = (

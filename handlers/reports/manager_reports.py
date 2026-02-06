@@ -207,7 +207,7 @@ async def report_manager_tasks_cb_handler(query: types.CallbackQuery):
         # 🔹 ИИ-РЕКОМЕНДАЦИИ
         # ====================================================
 
-        #ai_text = generate_ai_recommendations(stats)
+        ai_text = generate_ai_recommendations(stats)
 
         caption = (
             "📊 Нагрузка и эффективность сотрудников\n\n"
