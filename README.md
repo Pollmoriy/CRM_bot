@@ -1,12 +1,6 @@
-<div align="center">
-
 # 🤖 Telegram CRM Bot
 
-### Enterprise-style CRM system built on top of Telegram
-
-**Role-based access • Advanced MySQL logic • Analytics & Reports • Local AI recommendations**
-
----
+## Корпоративная CRM-система в виде Telegram-бота
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge)
 ![Telegram](https://img.shields.io/badge/Telegram-Bot-blue?style=for-the-badge)
@@ -14,226 +8,228 @@
 ![AI](https://img.shields.io/badge/AI-Local%20LLM-success?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=for-the-badge)
 
-</div>
+---
+
+## 📌 Описание проекта
+
+Данный проект представляет собой **полнофункциональную CRM-систему, реализованную в виде Telegram-бота**, ориентированную на автоматизацию бизнес-процессов в малом и среднем бизнесе.
+
+Система обеспечивает:
+
+- управление клиентской базой;
+- контроль сделок и этапов продаж;
+- постановку и мониторинг задач сотрудников;
+- автоматические уведомления и напоминания;
+- аналитическую отчётность и визуализацию данных;
+- журналирование всех действий пользователей (аудит);
+- интеллектуальную поддержку принятия решений с использованием локальной AI-модели.
+
+Проект разработан как **учебный и портфолио-проект**, демонстрирующий навыки backend-разработки, проектирования баз данных, построения бизнес-логики и архитектуры корпоративных систем.
 
 ---
 
-## 💼 About the Project (HR Overview)
+## 🏗 Архитектура системы
 
-This repository contains a **completed enterprise-style CRM system implemented as a Telegram bot**.
+Проект построен на **клиент-серверной архитектуре**, где Telegram выступает в роли пользовательского интерфейса, а серверная часть реализует всю бизнес-логику.
 
-The project was created as a **portfolio project** to demonstrate:
+Основные компоненты системы:
 
-* backend and database-centric development;
-* real business logic and auditability;
-* system architecture and scalability;
-* analytics, reporting, and AI-assisted decision support.
-
-The system focuses on **practical business workflows** such as client management, deal tracking, employee task control, performance analytics, and transparent auditing.
-
----
-
-## ✨ Highlights
-
-✅ Enterprise-style role model (Admin / Manager / Employee)
-✅ Strong database-driven logic (triggers, procedures, functions)
-✅ Full audit log of all critical actions
-✅ Automated reminders and notifications
-✅ Visual analytics with charts and PDF reports
-✅ Local AI model for analytical recommendations
-✅ Telegram as a business interface (no separate frontend)
+- **Telegram Bot (aiogram)** — интерфейс взаимодействия пользователей с системой;
+- **Backend (Python)** — бизнес-логика, аналитика, отчётность;
+- **MySQL** — централизованное хранилище данных;
+- **SQLAlchemy ORM** — слой взаимодействия с базой данных;
+- **APScheduler** — планировщик фоновых задач и уведомлений;
+- **Локальная LLM модель (TinyLLaMA)** — интеллектуальная аналитика.
 
 ---
 
-## 👥 Roles & Access Model
+## 👥 Ролевая модель доступа
 
-<details>
-<summary><strong>👑 Administrator</strong></summary>
+В системе реализована ролевая модель:
 
-* Full access to all system data
-* User and role management (except other admins)
-* Employee → Manager assignment
-* Global analytics and reports
-* Sales analysis and sales funnel
-* Full PDF report generation with AI recommendations
+### Администратор
+- полный доступ ко всем данным;
+- управление пользователями и ролями;
+- глобальная аналитика и отчёты;
+- генерация AI-рекомендаций.
 
-**Reports available:**
+### Менеджер
+- управление клиентами, сделками и задачами;
+- контроль сотрудников;
+- аналитика по своей команде.
 
-* 📊 Employee activity
-* 📈 Deal progress
-* 💰 Sales by clients
-* 🪣 Sales funnel
-* 📅 Period dynamics
-* 🤖 Full analytical report
+### Сотрудник
+- доступ только к назначенным задачам;
+- обновление статусов.
 
-</details>
-
-<details>
-<summary><strong>🧑‍💼 Manager</strong></summary>
-
-* Access to all clients
-* Deal and task management
-* Employee assignment and control
-* Deal progress visualization
-* **Employees section** (assigned staff & direct messaging)
-* Team analytics
-
-**Reports available:**
-
-* 📊 Employee task performance
-* 📈 Deal progress
-* 📅 Task timeline dynamics
-
-AI recommendations are generated when building selected charts.
-
-</details>
-
-<details>
-<summary><strong>👤 Employee</strong></summary>
-
-* Access only to assigned deals and tasks
-* Task status updates
-* Client work within assigned deals
-* Personal progress tracking
-
-</details>
+⚠️ При первом запуске системы **первый пользователь автоматически регистрируется как администратор**.
 
 ---
 
-## 🧾 Core Modules
+## 🗄 Структура базы данных
 
-### 👥 Clients
+База данных реализована в MySQL и включает следующие ключевые сущности:
 
-* Create, edit, delete clients
-* Search and filtering:
+- `users` — пользователи  
+- `clients` — клиенты  
+- `deals` — сделки  
+- `tasks` — задачи  
+- `interactions` — история взаимодействий  
+- `notifications` — уведомления  
+- `mailings` — рассылки  
+- `reports` — отчёты  
+- `audit_logs` — журнал действий  
 
-  * name
-  * segment
-  * creation date
-  * manager
-  * deal stage
+Реализованы:
 
-### 🤝 Deals
-
-* Deal creation and manager assignment
-* Employee assignment
-* Deal stages: `New → In Progress → Closed`
-* Automatic closure when all tasks are completed
-* Visual progress charts
-* Complete change history
-
-### ✅ Tasks
-
-* Task creation and assignment
-* Statuses: `New / In Progress / Completed / Overdue`
-* Deadlines and priorities
-* Automated reminders
-* Overdue notifications
-
-All changes are recorded in the audit log.
+- внешние ключи;
+- индексация;
+- ограничения целостности;
+- асинхронный доступ к данным;
+- логирование.
 
 ---
 
-## 📊 Analytics & Reporting
+## 🧠 Логическая схема базы данных
 
-📈 **Charts**
-
-* Generated in Python
-* Sent as PNG via Telegram
-* Short explanatory summaries
-
-📄 **PDF Reports (Admin only)**
-
-* Period-based (day / week / month / year)
-* Charts + aggregated data
-* AI recommendations
-* Stored in database
-* Delivered via Telegram
+<img width="600" height="514" alt="Рисунок2" src="https://github.com/user-attachments/assets/e9594399-69cc-4a48-960c-a890dac9d009" />
 
 ---
 
-## 🧠 AI Integration
+## 📌 7. Пример сценария работы
 
-Local LLM model:
+1. Пользователь регистрируется в системе.
+2. Получает доступ к меню управления.
+3. Добавляет клиентов.
+4. Создаёт задачи и заказы.
+5. Получает напоминания.
+6. Просматривает аналитику и отчёты.
+7. Использует автоматические рассылки.
 
-```
-models/tinyllama
+---
+
+## ⚙️ 8. Требования к окружению
+
+Для корректной работы проекта необходимо:
+
+- **Python 3.10 или выше**
+- **Аккаунт Telegram**
+- **Созданный Telegram Bot Token**
+
+---
+
+# ⚙ Инструкция по установке и запуску проекта
+
+Данный раздел содержит **пошаговую инструкцию по установке, настройке и первому запуску Telegram CRM Bot**.
+
+Следуя этим шагам, вы сможете развернуть проект локально и запустить  Telegram-бота.
+
+---
+
+## 1️⃣ Клонирование репозитория
+
+Склонируйте проект с GitHub и перейдите в каталог проекта:
+
+```bash
+git clone https://github.com/<username>/Pollmoriy.git
+cd Pollmoriy
 ```
 
-**AI principles:**
+## 2️⃣ Создание виртуального окружения
+Создайте виртуальное окружение Python:
+```bash
+python -m venv venv
+```
+Активируйте его:
+```
+Windows
+venv\Scripts\activate
+Linux / macOS
+source venv/bin/activate
+```
+## 3️⃣ Установка зависимостей
+Установите все необходимые библиотеки:
+```
+pip install -r requirements.txt
+```
+## 4️⃣ Настройка переменных окружения
+В корне проекта создайте файл .env и заполните его следующим образом:
+```
+BOT_TOKEN=your_telegram_bot_token
 
-* Analytics and recommendations only
-* No direct influence on business logic
-* Limited, conservative management insights
-* Triggered:
+DB_NAME=business_manager
+DB_USER=root
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=3306
+```
+⚠️ Файл .env не добавляется в репозиторий и должен находиться в .gitignore.
+Он содержит конфиденциальные данные и не должен публиковаться.
 
-  * by Managers — for selected charts
-  * by Admins — for full reports
+## 5️⃣ Создание базы данных MySQL
+Создайте новую базу данных в MySQL:
+```
+CREATE DATABASE business_manager
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+```
+## 6️⃣ Инициализация таблиц
+При первом запуске проекта все таблицы создаются автоматически:
+```
+python main.py
+```
+В консоли появится сообщение:
+```
+База данных готова!
+```
+## 7️⃣ Запуск Telegram-бота
+Для запуска бота выполните:
+```
+python main.py
+```
+После успешного запуска бот станет доступен в Telegram.
 
-Admin reports (including AI insights) are stored in the database.
+## 8️⃣ Первый вход в систему
+Первый пользователь, отправивший боту команду:
 
----
+/start
+➡ автоматически регистрируется как администратор системы и получает полный доступ ко всем функциям.
 
-## 🗄 Database-Driven Architecture
+## 9️⃣ Типовые ошибки и способы их решения
+❌ Ошибка подключения к базе данных
+Проверьте:
 
-**Database: MySQL (MySQL Workbench)**
+- запущен ли MySQL-сервер;
 
-The database plays an **active architectural role**.
+- корректность параметров подключения в .env;
 
-Implemented at DB level:
+- существует ли база данных business_manager;
 
-* triggers
-* stored procedures
-* user-defined functions
-* centralized audit log
+- открыт ли порт 3306.
 
-Database logic handles:
+❌ Бот не запускается
+Проверьте:
 
-* deadline control
-* reminder conditions
-* overdue detection
-* automatic audit logging
+- активировано ли виртуальное окружение;
 
-**APScheduler** works alongside the database to deliver notifications to Telegram users.
+- установлены ли все зависимости (pip install -r requirements.txt);
 
----
+- корректен ли BOT_TOKEN.
 
-## 🔐 Security Model
+❌ Ошибки импорта модулей
+Выполните повторную установку зависимостей:
+```
+pip install --upgrade -r requirements.txt
+```
+🚀 Готово!
+После выполнения всех шагов система полностью готова к использованию.
 
-* Authentication via **Telegram ID**
-* No passwords stored
-* Role and permission control via database
-* Sensitive configuration stored in `.env`
+Вы можете:
 
----
+- регистрировать пользователей;
 
-## 🧩 Tech Stack
+- управлять клиентами и сделками;
 
-| Category      | Technology                  |
-| ------------- | --------------------------- |
-| Language      | Python 3.11+                |
-| Bot Framework | aiogram                     |
-| Database      | MySQL + asyncmy             |
-| ORM           | SQLAlchemy                  |
-| Scheduler     | APScheduler                 |
-| Analytics     | pandas, matplotlib / plotly |
-| Reports       | reportlab (PDF)             |
-| AI            | Local LLM (TinyLLaMA)       |
+- назначать задачи;
 
----
-
-## 🚀 Project Status
-
-🟢 **Completed**
-Designed with focus on scalability, auditability, and real-world business use cases.
-
----
-
-## 👩‍💻 Author
-
-**Polina Shevtsova**
-Python / Backend Developer
-
-This project was developed independently and is intended for professional portfolio and hiring evaluation.
-
-⭐ If you find this project interesting — feel free to star the repository!
+- формировать отчёты.
