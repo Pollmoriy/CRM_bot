@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 *.db
 .env
+models/tinyllama/*.safetensors
+models/tinyllama/*.bin
+models/tinyllama/*.pt
